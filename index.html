@@ -1,13 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dino Runner</title>
+
+  <!-- keep your external CSS file if you already use it -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- quick inline style so the canvas really fills the window -->
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      display: flex;            /* centre the stage */
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #222;         /* letter‑box colour */
+    }
+    canvas {
+      /* grow until either dimension hits the limit. keep aspect */
+      width: 100%;
+      max-width: 1800px;
+      height: auto;
+      image-rendering: pixelated;
+      background: #8ec9fc;
+    }
+    #startScreen, #highscores {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
+      width: 230px;
+    }
+    #startButton, #playAgain {
+      margin-top: 1rem;
+      padding: 0.5rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
   <canvas id="game"></canvas>
+
+  <div id="startScreen">
+    <h2>Dino Runner</h2>
+    <button id="startButton">Start Game</button>
+  </div>
 
   <div id="highscores">
     <h2>High Scores</h2>
@@ -15,6 +61,7 @@
     <button id="playAgain">Play Again</button>
   </div>
 
-  <script src="game.js"></script>
+  <!-- the browser will load every module imported from main.js -->
+  <script type="module" src="scripts/main.js"></script>
 </body>
 </html>
