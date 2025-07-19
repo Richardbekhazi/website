@@ -1,67 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dino Runner</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dino Runner</title>
 
-  <!-- keep your external CSS file if you already use it -->
-  <link rel="stylesheet" href="style.css" />
+<style>
+/* ---------- page chrome ---------- */
+html, body {
+  margin: 0;
+  height: 100vh;
+  background: #222;                 /* letter‑box colour               */
+  display: flex; justify-content: center; align-items: center;
+  overflow: hidden;                 /* never show scroll bars          */
+  font-family: system-ui, sans-serif;
+}
 
-  <!-- quick inline style so the canvas really fills the window -->
-  <style>
-    html, body {
-      margin: 0; padding: 0;
-      display: flex;            /* centre the stage */
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #222;         /* letter‑box colour */
-    }
-    canvas {
-      /* grow until either dimension hits the limit. keep aspect */
-      width: 100%;
-      max-width: 1800px;
-      height: auto;
-      image-rendering: pixelated;
-      background: #8ec9fc;
-    }
-    #startScreen, #highscores {
-      position: absolute;
-      left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      padding: 1rem 2rem;
-      border-radius: 10px;
-      text-align: center;
-      display: none;
-      width: 230px;
-    }
-    #startButton, #playAgain {
-      margin-top: 1rem;
-      padding: 0.5rem 1.2rem;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-  </style>
+/* ---------- fixed‑ratio stage ---------- */
+#stage {
+  position: relative;
+  border: 4px solid #000;
+  background: #8ec9fc;             /* sky while loading               */
+  overflow: hidden;                /* clip any overshoot              */
+}
+
+/* we size the canvas in JS with an integer scale, so its CSS
+   width/height are set from JS. keep auto here.                  */
+#game { display:block; image-rendering:pixelated; }
+
+/* ---------- overlay panels ---------- */
+.panel {
+  position: absolute; left:50%; top:50%;
+  transform: translate(-50%,-50%);
+  min-width:230px; background:rgba(0,0,0,0.85);
+  color:#fff; padding:1rem 2rem; border-radius:10px;
+  text-align:center; display:none;
+}
+.panel h2 { margin:0 0 .8rem 0; }
+button    { margin-top:1rem; padding:.5rem 1.4rem;
+            font-size:1rem; cursor:pointer; }
+</style>
 </head>
 
 <body>
-  <canvas id="game"></canvas>
+  <div id="stage">
+    <canvas id="game"></canvas>
 
-  <div id="startScreen">
-    <h2>Dino Runner</h2>
-    <button id="startButton">Start Game</button>
+    <div id="startScreen" class="panel">
+      <h2>Dino Runner</h2>
+      <button id="startButton">Start Game</button>
+    </div>
+
+    <div id="highscores" class="panel">
+      <h2>High Scores</h2>
+      <ol id="scoreList" style="margin:0; padding-left:1.6rem; text-align:left;"></ol>
+      <button id="playAgain">Play Again</button>
+    </div>
   </div>
 
-  <div id="highscores">
-    <h2>High Scores</h2>
-    <ol id="scoreList"></ol>
-    <button id="playAgain">Play Again</button>
-  </div>
-
-  <!-- the browser will load every module imported from main.js -->
   <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* dino.js
-   Player sprite with physics, animation, death sequence. */
+   Player sprite with physics, animation, and clean death stop. */
 
 import { FLOOR_Y, SPRITE_H, DINO_STATES, FPS_DIV } from './constants.js';
 import { dinoImgs } from './assets.js';
@@ -23,10 +23,9 @@ const idx = { run: 0, jump: 0, dead: 0 };
 export function markDead() { dino.dead = true; }
 
 export function update(frame) {
-  if (dino.dead) {                              // only animate dead
-    if (frame % FPS_DIV === 0) {
-      idx.dead = (idx.dead + 1) % DINO_STATES.dead;
-    }
+  if (dino.dead) {
+    const max = DINO_STATES.dead;
+    if (idx.dead < max - 1 && frame % FPS_DIV === 0) idx.dead += 1;
     return;
   }
 
