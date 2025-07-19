@@ -1,0 +1,39 @@
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+canvas {
+  border: 2px solid #fff;
+  display: block;
+  background: #000; /* fallback while BG loads */
+}
+
+#highscores {
+  display: none;
+  margin-bottom: 20px;
+}
+
+#highscores h2 {
+  margin: 0 0 10px;
+}
+
+#highscores ol {
+  padding-left: 20px;
+  margin: 0 0 10px;
+}
+
+#playAgain {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* keep list neat */
+ol li { line-height: 1.6; }
