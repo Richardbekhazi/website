@@ -42,74 +42,71 @@ export function maybeSpawn(frame, stopped) {
 }
 
 export function updateAndDraw(frame, stopped) {
-  // If stopped (dino dead), freeze movement; otherwise use BASE_SPEED
   const speed = stopped ? 0 : BASE_SPEED;
 
-  // Draw planes
+  // --- Planes ---
   planes.forEach((p, i) => {
-    // Advance animation frame when flying or dead
+    // Advance animation or death‐animation once
     if (frame % FPS_DIV === 0) {
-      p.idx = (p.idx + 1) % PLANE_STATES[p.state];
+      if (!stopped) {
+        p.idx = (p.idx + 1) % PLANE_STATES[p.state];
+      } else if (p.state === 'dead' && p.idx < PLANE_STATES.dead - 1) {
+        p.idx++;
+      }
     }
 
-    // Move left unless stopped
-    p.x -= speed;
+    // Move only if still alive
+    if (!stopped) p.x -= speed;
 
-    // Compute display size
+    // Compute size
     const img = planeImgs[p.state][p.idx];
     const r   = img.naturalWidth / img.naturalHeight;
     p.width   = SPRITE_H * r;
 
-    // Flip horizontally when flying so plane faces left
-    if (p.state === 'fly') {
-      ctx.save();
-      ctx.translate(p.x + p.width / 2, p.y + SPRITE_H / 2);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, -p.width / 2, -SPRITE_H / 2, p.width, SPRITE_H);
-      ctx.restore();
-    } else {
-      // Dead plane just sits (no flip)
-      ctx.drawImage(img, p.x, p.y, p.width, SPRITE_H);
-    }
+    // Always flip horizontally so even dead plane looks left
+    ctx.save();
+    ctx.translate(p.x + p.width / 2, p.y + SPRITE_H / 2);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, -p.width / 2, -SPRITE_H / 2, p.width, SPRITE_H);
+    ctx.restore();
 
-    // Remove off‑screen only if still running
+    // Remove offscreen only while alive
     if (!stopped && p.x + p.width < 0) planes.splice(i, 1);
   });
 
-  // Draw lanterns (pumpkins), always flipped to face left
+  // --- Lanterns (Pumpkins) ---
   lanterns.forEach((l, i) => {
-    // Advance lantern animation
     if (frame % FPS_DIV === 0) {
-      l.idx = (l.idx + 1) % LANTERN_STATES[l.state];
+      if (!stopped) {
+        l.idx = (l.idx + 1) % LANTERN_STATES[l.state];
+      } else if (l.state === 'dead' && l.idx < LANTERN_STATES.dead - 1) {
+        l.idx++;
+      }
     }
 
-    // Move left unless stopped
-    l.x -= speed;
+    if (!stopped) l.x -= speed;
 
-    // Compute display size
     const img = lanternImgs[l.state][l.idx];
-    l.width   = SPRITE_H * (img.naturalWidth / img.naturalHeight);
+    l.width  = SPRITE_H * (img.naturalWidth / img.naturalHeight);
 
-    // Flip pumpkin horizontally
+    // Flip pumpkins so they always face left
     ctx.save();
     ctx.translate(l.x + l.width / 2, l.y + SPRITE_H / 2);
     ctx.scale(-1, 1);
     ctx.drawImage(img, -l.width / 2, -SPRITE_H / 2, l.width, SPRITE_H);
     ctx.restore();
 
-    // Remove off‑screen only if still running
     if (!stopped && l.x + l.width < 0) lanterns.splice(i, 1);
   });
 }
 
-
 export function hit(d) {
-  const hh = d.duck ? SPRITE_H * 0.5 : SPRITE_H;
+  const hh = d.ducking ? SPRITE_H * 0.5 : SPRITE_H;
   const hy = d.y + SPRITE_H - hh;
 
   function coll(e) {
     const ix = e.width * HIT_FRAC;
-    const iy = hh * HIT_FRAC;
+    const iy = hh       * HIT_FRAC;
     return d.x < e.x + e.width - ix &&
            d.x + d.width > e.x + ix &&
            hy < e.y + SPRITE_H - iy &&
