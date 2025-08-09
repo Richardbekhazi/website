@@ -6,29 +6,24 @@
 <title>Dino Runner</title>
 
 <style>
-/* ---------- page chrome ---------- */
 html, body {
   margin: 0;
   height: 100vh;
-  background: #222;                 /* letter‑box colour               */
+  background: #222;
   display: flex; justify-content: center; align-items: center;
-  overflow: hidden;                 /* never show scroll bars          */
+  overflow: hidden;
   font-family: system-ui, sans-serif;
 }
 
-/* ---------- fixed‑ratio stage ---------- */
 #stage {
   position: relative;
   border: 4px solid #000;
-  background: #8ec9fc;             /* sky while loading               */
-  overflow: hidden;                /* clip any overshoot              */
+  background: #8ec9fc;
+  overflow: hidden;
 }
 
-/* we size the canvas in JS with an integer scale, so its CSS
-   width/height are set from JS. keep auto here.                  */
 #game { display:block; image-rendering:pixelated; }
 
-/* ---------- overlay panels ---------- */
 .panel {
   position: absolute; left:50%; top:50%;
   transform: translate(-50%,-50%);
@@ -37,8 +32,20 @@ html, body {
   text-align:center; display:none;
 }
 .panel h2 { margin:0 0 .8rem 0; }
-button    { margin-top:1rem; padding:.5rem 1.4rem;
-            font-size:1rem; cursor:pointer; }
+button { margin-top:1rem; padding:.5rem 1.4rem;
+         font-size:1rem; cursor:pointer; }
+
+#scoreDisplay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+}
 </style>
 </head>
 
@@ -46,15 +53,18 @@ button    { margin-top:1rem; padding:.5rem 1.4rem;
   <div id="stage">
     <canvas id="game"></canvas>
 
+    <!-- New visible score for AI & players -->
+    <div id="scoreDisplay">0</div>
+
     <div id="startScreen" class="panel">
       <h2>Dino Runner</h2>
       <button id="startButton">Start Game</button>
     </div>
 
     <div id="highscores" class="panel">
-      <h2>High Scores</h2>
+      <h2>High Scores</h2>
       <ol id="scoreList" style="margin:0; padding-left:1.6rem; text-align:left;"></ol>
-      <button id="playAgain">Play Again</button>
+      <button id="playAgain">Play Again</button>
     </div>
   </div>
 

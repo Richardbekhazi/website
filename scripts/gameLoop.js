@@ -1,5 +1,5 @@
-/* scripts/gameLoop.js
-   Main loop with clean restart and true “freeze” on death. */
+/* gameLoop.js
+   Main loop with clean restart and a pause on death. */
 
 import { canvas, ctx, applyWorldTransform } from './canvas.js';
 import { loadAll } from './assets.js';
@@ -29,10 +29,8 @@ let frame, score, gameOver, deathCounter;
 let loopID = null;
 
 function newGame() {
-  // Stop any existing loop
   if (loopID !== null) cancelAnimationFrame(loopID);
 
-  // Reset game state
   frame = 0;
   score = 0;
   gameOver = false;
@@ -52,59 +50,67 @@ function newGame() {
 function loop() {
   frame++;
 
-  // Clear and draw background
   ctx.save();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   applyWorldTransform();
   drawBG();
 
-  // Always animate the dino (so its death frames play out)
+  // Always update the dino so its death frames play
   updateDino(frame);
 
   if (!gameOver) {
-    // Collision check happens before any new spawn
     if (hit(dino)) {
       gameOver = true;
       killAll();
       markDead();
     } else {
-      // Only spawn while alive
       maybeSpawn(frame, false);
     }
-    // Update score while alive
     score = Math.floor(frame / 10);
   } else {
-    // No spawns after death
     maybeSpawn(frame, true);
-
-    // After a short pause, record and show highscores
     if (deathCounter++ === 120) {
       pushHS(score);
       showPanel();
     }
   }
 
-  // Draw everything
   drawDino();
   updateAndDraw(frame, gameOver);
   drawScore(score);
 
   ctx.restore();
-
-  // Schedule next frame
   loopID = requestAnimationFrame(loop);
 }
 
-// Wait for assets before showing the start button
+// Show start only after assets load
 export function prepare() {
   loadAll(() => {
     document.getElementById('startScreen').style.display = 'block';
   });
 }
 
-// Button handlers
+// Buttons
 document.getElementById('startButton').onclick = () => {
   document.getElementById('startScreen').style.display = 'none';
   newGame();
 };
 document.getElementById('playAgain').onclick = () => newGame();
+
+// Space or Enter can start or replay. This does not trigger jump.
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' && e.code !== 'Enter') return;
+
+  const startScreen = document.getElementById('startScreen');
+  const highScores = document.getElementById('highscores');
+
+  if (startScreen.style.display === 'block') {
+    e.preventDefault();
+    startScreen.style.display = 'none';
+    newGame();
+  } else if (highScores.style.display === 'block') {
+    e.preventDefault();
+    hidePanel();
+    newGame();
+  }
+});

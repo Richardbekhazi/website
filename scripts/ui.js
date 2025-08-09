@@ -1,7 +1,5 @@
 /* ui.js
-   Score text plus high‑score storage and display. */
-
-import { ctx } from './canvas.js';
+   Score text plus high score storage and display. */
 
 const key = 'highscores';
 
@@ -18,9 +16,11 @@ export function pushHS(n) {
 }
 
 export function drawScore(score) {
-  ctx.fillStyle = '#fff';
-  ctx.font = '16px sans-serif';
-  ctx.fillText(`Score: ${score}`, 10, 22);
+  // Only HTML score. No canvas text. Prevents duplicate score.
+  const scoreEl = document.getElementById('scoreDisplay');
+  if (scoreEl) scoreEl.textContent = score;
+  // Expose to the AI agent.
+  window.bekhaziScore = score;
 }
 
 export function showPanel() {

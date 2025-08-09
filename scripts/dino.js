@@ -1,6 +1,5 @@
-/* scripts/dino.js
-   Player with jump, one‑off reversible crouch that you can cancel by jumping,
-   and death animation. */
+/* dino.js
+   Player with jump and a true hold crouch. */
 
 import { FLOOR_Y, SPRITE_H, DINO_STATES, FPS_DIV } from './constants.js';
 import { dinoImgs } from './assets.js';
@@ -18,21 +17,10 @@ export const dino = {
   dead: false,
   width: 0,
   crouchIndex: 0,
-  crouchPhase: 'down'   // 'down' then 'up'
+  crouchPhase: 'down'   // down then up while exiting
 };
 
 const idx = { run: 0, jump: 0, dead: 0 };
-let crouchRequested = false;
-
-// Listen for a down‑arrow press to trigger a single crouch
-window.addEventListener('keydown', e => {
-  if (e.code === 'ArrowDown'
-      && dino.grounded
-      && !dino.dead
-      && !dino.ducking) {
-    crouchRequested = true;
-  }
-});
 
 export function markDead() {
   dino.dead = true;
@@ -40,7 +28,7 @@ export function markDead() {
 }
 
 export function update(frame) {
-  // 1) Death animation
+  // Death animation
   if (dino.dead) {
     if (frame % FPS_DIV === 0 && idx.dead < DINO_STATES.dead - 1) {
       idx.dead++;
@@ -48,45 +36,41 @@ export function update(frame) {
     return;
   }
 
-  // 2) Jump: allow jump even if crouching
+  // Jump cancels crouch
   if (keys.jump && dino.grounded) {
-    dino.ducking = false;        // cancel any crouch
-    dino.vy = dino.jumpVel;      // start jump
-    dino.grounded = false;
-    return;
-  }
-
-  // 3) One‑off crouch trigger (only if not jumped)
-  if (crouchRequested) {
-    dino.ducking = true;
-    dino.crouchIndex = 0;
+    dino.ducking = false;
     dino.crouchPhase = 'down';
-    crouchRequested = false;
-    return;
+    dino.vy = dino.jumpVel;
+    dino.grounded = false;
   }
 
-  // 4) Crouch reversible animation
-  if (dino.ducking) {
-    if (frame % FPS_DIV === 0) {
-      const max = DINO_STATES.dead;
-      if (dino.crouchPhase === 'down') {
-        if (dino.crouchIndex < max - 1) {
+  // Crouch while grounded. Hold as long as duck is true.
+  if (dino.grounded && !keys.jump) {
+    if (keys.duck) {
+      dino.ducking = true;
+      // Animate down to full crouch, then hold at the bottom.
+      if (frame % FPS_DIV === 0) {
+        const max = DINO_STATES.dead - 1;
+        if (dino.crouchPhase === 'down' && dino.crouchIndex < max) {
           dino.crouchIndex++;
-        } else {
-          dino.crouchPhase = 'up';
         }
-      } else { // phase 'up'
+      }
+      return;
+    } else if (dino.ducking) {
+      // Animate up until fully standing. Then clear crouch.
+      if (frame % FPS_DIV === 0) {
         if (dino.crouchIndex > 0) {
           dino.crouchIndex--;
         } else {
           dino.ducking = false;
+          dino.crouchPhase = 'down';
         }
       }
+      return;
     }
-    return;
   }
 
-  // 5) Normal gravity + running/jumping animation
+  // Normal gravity and running or jumping animation
   dino.vy += dino.gravity;
   dino.y  += dino.vy;
   if (dino.y + SPRITE_H > FLOOR_Y) {
@@ -108,7 +92,7 @@ export function draw() {
     state = 'dead';
     frameIndex = idx.dead;
   } else if (dino.ducking) {
-    state = 'dead';  // reuse dead frames for crouch
+    state = 'dead';  // reuse dead frames for crouch frames
     frameIndex = dino.crouchIndex;
   } else {
     state = dino.grounded ? 'run' : 'jump';
