@@ -1,0 +1,175 @@
+/*
+  Translations.
+  English is written in index.html and read from the page at start-up, so the page
+  reads fully without JavaScript. Each other language is a dictionary below, keyed by
+  the data-i18n / data-i18n-attr names used in the HTML.
+
+  To add Arabic or Spanish later: add an entry to LANGS (Arabic uses dir: 'rtl'),
+  add a dictionary with the same keys, and turn the toggle in main.js into a small menu.
+*/
+window.I18N = {
+  LANGS: {
+    en: { label: 'English', dir: 'ltr', locale: 'en_CA' },
+    fr: { label: 'Français', dir: 'ltr', locale: 'fr_CA' }
+  },
+  META: {
+    en: {
+      title: 'Abdallah Najem | Physiotherapist in Ottawa & Vestibular Therapy',
+      description: 'Abdallah Najem, Senior Registered Physiotherapist and Vestibular Therapist at Arro Wellness in Ottawa. Sports, orthopaedic and vestibular therapy for dizziness and vertigo, serving Westboro, Carlington, Nepean and the Queensway corridor. Book online.'
+    },
+    fr: {
+      title: 'Abdallah Najem | Physiothérapeute à Ottawa et thérapie vestibulaire',
+      description: 'Abdallah Najem, physiothérapeute agréé principal et thérapeute vestibulaire chez Arro Wellness à Ottawa. Physiothérapie sportive, orthopédique et vestibulaire pour les étourdissements et les vertiges, près de Westboro, Carlington, Nepean et du corridor de la Queensway. Réservez en ligne.'
+    }
+  },
+  fr: {
+    skip: 'Aller au contenu',
+    homeLabel: 'Abdallah Najem, accueil',
+    navLabel: 'Navigation principale',
+    navAbout: 'À propos',
+    navCare: 'Soins',
+    navDizzy: 'Étourdissements',
+    navSession: 'Votre séance',
+    navFaq: 'Questions',
+    navClinic: 'Clinique',
+    langToggle: 'EN',
+    langToggleLabel: 'Switch to English',
+    book: 'Réserver avec Abdallah',
+    bookOnline: 'Réserver en ligne',
+    newTab: '(s’ouvre dans un nouvel onglet)',
+
+    heroAsk: 'Demandez',
+    heroH1Hidden: 'Najem, physiothérapeute à Ottawa',
+    heroRole: 'Physiothérapeute agréé principal et thérapeute vestibulaire',
+    heroLead: 'Abdallah Najem est physiothérapeute agréé principal et thérapeute vestibulaire chez Arro Wellness, à Ottawa : blessures, douleurs au cou et au dos, étourdissements.',
+    callLabel: 'Appeler le',
+    askFor: 'Demandez Abdallah lors de la réservation',
+    askForShort: 'demandez Abdallah',
+    portraitAlt: 'Abdallah Najem en tenue médicale noire, les bras croisés',
+    handsAlt: 'Les bras croisés d’Abdallah, en tenue médicale noire',
+
+    aboutH1: '12 ans,',
+    aboutH2: '2 pays,',
+    aboutH3: '4 langues,',
+    aboutH4: '1 Abdallah.',
+    factTraining: 'Formation',
+    factWhere: 'Où',
+    factLangs: 'Langues',
+    factPhone: 'Téléphone',
+    factHours: 'Heures',
+    hoursPh: '[HEURES D’OUVERTURE]',
+    about1: 'Je m’appelle Abdallah Najem, physiothérapeute agréé principal et thérapeute vestibulaire chez Arro Wellness, à Ottawa. En 12 ans, j’ai soigné des patients au Canada et au Liban : des athlètes qui reviennent d’une blessure, des travailleurs de bureau dont le cou se raidit un peu plus chaque jour, et des personnes pour qui la pièce tourne dès qu’elles bougent la tête.',
+    about4: 'Chaque séance commence par une évaluation de votre façon de bouger. Ensuite, nous traitons ce qui vous limite avec des soins manuels, puis nous terminons par des exercices pour que les progrès durent.',
+
+    servicesTitle: 'Ce que je traite',
+    servicesLead: 'Cinq domaines de soins, une même approche : comprendre la cause, puis travailler ensemble pour mieux bouger et vous sentir mieux.',
+    s1Title: 'Physiothérapie et réadaptation sportives',
+    s1Problem: 'Une blessure vous a éloigné de votre sport, de la course ou de l’entraînement, et vous ne savez pas quand ni comment reprendre.',
+    s1Help: 'Nous regardons comment la blessure modifie vos mouvements, puis nous bâtissons un plan progressif de traitement et d’exercices pour vous aider à reprendre l’activité en confiance.',
+    s1Alt: 'Supports à squat et disques de poids dans l’espace d’entraînement utilisé pour les exercices de réadaptation',
+    s2Title: 'Physiothérapie orthopédique',
+    s2Problem: 'Douleurs au cou, au dos ou à l’épaule, tensions musculaires et raideurs qui compliquent le travail, le sommeil ou les tâches quotidiennes.',
+    s2Help: 'Pour les travailleurs de bureau qui ont mal au cou, ce n’est pas qu’une question de posture. Un manque de mobilité, un haut du dos raide et des fléchisseurs profonds du cou moins forts peuvent tous jouer un rôle ; le traitement tient donc compte des trois.',
+    s2Alt: 'Gravure anatomique de la colonne vertébrale et du bassin',
+    s3Title: 'Thérapie vestibulaire',
+    s3Problem: 'Étourdissements, vertiges ou VPPB : l’impression que la pièce tourne quand vous vous retournez dans le lit ou tournez la tête.',
+    s3Help: 'Une évaluation vestibulaire cherche ce qui cause les symptômes. Selon la cause, des mouvements de tête précis et des exercices d’équilibre peuvent vous aider à retrouver votre stabilité.',
+    s3Alt: 'Gravure de 1806 de l’oreille interne, montrant les canaux semi-circulaires qui perçoivent les mouvements de la tête',
+    s4Title: 'Thérapie par ondes de choc',
+    s4Problem: 'Une douleur qui persiste depuis un moment peut demander un autre outil, en plus des soins manuels et des exercices.',
+    s4Help: 'La thérapie par ondes de choc fait partie des traitements que j’offre. Après votre évaluation, je vous dirai si elle convient à votre situation et comment elle s’intègre à votre plan.',
+    s4Alt: 'Appareil de thérapie par ondes de choc avec ses deux pièces à main',
+    s5Title: 'Mobilisation des tissus mous et thérapie manuelle',
+    s5Problem: 'Des muscles et des fascias tendus qui limitent vos mouvements.',
+    s5Help: 'Ce n’est pas un massage. Le massage vise surtout la détente ; la mobilisation des tissus mous fait partie d’un traitement de physiothérapie. J’évalue d’abord votre façon de bouger, puis j’utilise des techniques manuelles ciblées sur les tissus qui vous limitent, et j’ajoute des exercices pour que les résultats durent.',
+    s5Alt: 'Table de traitement avec un oreiller dans une salle de traitement chez Arro Wellness',
+
+    spinTitleA: 'Quand la pièce',
+    spinTitleB: 'tourne',
+    spinText: 'Avec le VPPB, de minuscules cristaux de l’oreille interne peuvent se déplacer. Un simple mouvement de tête envoie alors un faux signal, et la pièce semble tourner.',
+    spinMore: 'La thérapie vestibulaire commence par une évaluation pour trouver ce qui cause les étourdissements, puis vise une pièce qui reste immobile.',
+    spinBtn: 'Tournez la tête',
+    spinAlt: 'Une salle de traitement chez Arro Wellness, qui tourne puis s’immobilise',
+    spinCaption: 'Une salle de traitement chez Arro Wellness.',
+    spinSpinning: 'La pièce tourne…',
+    spinSettled: 'Et elle s’immobilise.',
+
+    stepsTitle: 'À quoi vous attendre',
+    stepsLead: 'Chaque visite suit le même ordre : vous savez toujours où vous en êtes, et pourquoi.',
+    stepImg1: 'Une salle de traitement chez Arro Wellness, avec de l’équipement de réadaptation au mur',
+    stepImg2: 'Une table de traitement réglable chez Arro Wellness',
+    stepImg3: 'Espace d’entraînement avec supports à squat pour les exercices',
+    step1Title: 'Évaluer',
+    step1Text: 'Nous parlons de ce que vous ressentez et de ce que vous voulez retrouver. Ensuite, j’observe comment vous bougez pour trouver ce qui cause le problème, pas seulement l’endroit où ça fait mal.',
+    step2Title: 'Traiter',
+    step2Text: 'Le traitement manuel cible ce que l’évaluation a révélé : mobilisation des tissus mous, thérapie manuelle et, au besoin, ondes de choc ou techniques vestibulaires.',
+    step3Title: 'S’exercer',
+    step3Text: 'Vous repartez avec quelques exercices choisis pour vous, pour que les progrès faits en clinique se poursuivent à la maison.',
+
+    langsTitleA: 'Vos soins dans',
+    langsTitleB: 'votre langue',
+    langsText: 'La douleur et les étourdissements sont déjà difficiles à décrire. Vous pouvez le faire dans la langue où vous êtes le plus à l’aise.',
+    langsCaption: 'Les langues dans lesquelles Abdallah traite, et comment le demander dans chacune',
+    thLang: 'Langue',
+    thLevel: 'Niveau',
+    thAsk: 'Comment demander',
+    lvFluent: 'Courant',
+    lvNative: 'Langue maternelle',
+    lvBasic: 'Clinique de base',
+    ig1Alt: 'Publication Instagram : Abdallah Najem, services de physiothérapie à Ottawa, 12 ans d’expérience clinique au Canada et au Liban',
+    ig2Alt: 'Publication Instagram : Étourdissements. La pièce tourne-t-elle quand vous bougez la tête ? Ce pourrait être un VPPB',
+    ig3Alt: 'Publication Instagram d’Abdallah : vos soins dans votre langue, anglais, français, arabe et espagnol',
+
+    faqTitle: 'Questions fréquentes',
+    q1: 'La mobilisation des tissus mous, est-ce la même chose qu’un massage ?',
+    a1: 'Non. Le massage vise surtout la détente. La mobilisation des tissus mous fait partie d’un traitement de physiothérapie : j’évalue d’abord votre façon de bouger, puis j’utilise des techniques manuelles ciblées sur les muscles et les fascias qui vous limitent, et j’ajoute des exercices pour que les résultats durent.',
+    q2: 'Pourquoi ai-je mal au cou après une journée au bureau ?',
+    a2: 'Rester assis toute la journée y contribue, mais ce n’est pas qu’une question de posture. Un manque de mobilité, une raideur du haut du dos et une force réduite des fléchisseurs profonds du cou peuvent tous jouer un rôle. L’évaluation montre lesquels vous concernent, et le traitement et les exercices peuvent vous aider à retrouver un cou plus confortable.',
+    q3: 'Que faire si la pièce tourne quand je bouge la tête ?',
+    a3: 'Cette sensation est souvent liée au VPPB, un problème de l’oreille interne pour lequel la thérapie vestibulaire peut aider. Prenez rendez-vous pour une évaluation vestibulaire afin d’en vérifier la cause et de la traiter. Si l’étourdissement apparaît soudainement avec de nouveaux symptômes comme une difficulté à parler, une faiblesse, un engourdissement ou un mal de tête intense, composez le 911 immédiatement.',
+    q4: 'Offrez-vous la facturation directe ?',
+    a4ph: '[DÉTAILS DE FACTURATION DIRECTE : assureurs acceptés et fonctionnement chez Arro Wellness]',
+    a4: 'Appelez la clinique au 613-627-8808 pour confirmer selon votre régime.',
+    q5: 'Quels sont vos tarifs ?',
+    a5ph: '[TARIFS : évaluation initiale et séances de suivi]',
+    a5: 'Appelez la clinique pour connaître les tarifs en vigueur.',
+    q6: 'Comment prendre rendez-vous avec Abdallah ?',
+    a6: 'Réservez en ligne en tout temps, ou appelez Arro Wellness au 613-627-8808 et demandez Abdallah.',
+
+    tourTitleA: 'Visite',
+    tourTitleB: 'de la clinique',
+    tourNote: 'Arro Wellness comprend des salles de traitement pour l’évaluation et les soins manuels, ainsi qu’un espace d’entraînement pour les exercices de réadaptation.',
+    tour1: 'Salle de traitement',
+    tour2: 'Équipement',
+    tour3: 'Table de traitement',
+    tour4: 'Espace d’entraînement',
+    tour1Alt: 'Vue d’ensemble d’une salle de traitement chez Arro Wellness',
+    tour2Alt: 'Rouleaux de mousse, ballons d’exercice, haltères et modèle de genou au mur de la salle de traitement',
+    tour3Alt: 'Gros plan sur une table de traitement réglable',
+    tour4Alt: 'Espace d’entraînement avec supports à squat et disques de poids',
+
+    instaTitle: 'Conseils sur Instagram',
+    instaText: 'Abdallah publie de courtes explications en langage simple sur les douleurs au cou, les étourdissements et la récupération.',
+    instaReviews: 'Les avis de patients sont regroupés dans la story à la une « Reviews » de son profil.',
+
+    clinicTitle: 'Trouver la clinique',
+    clinicSay: 'Arro Wellness se trouve au 102-1600, avenue Laperriere, à Ottawa, près de Westboro, de Carlington, de Nepean et de la Queensway.',
+    thumbAlt: 'Équipement de réadaptation au mur d’une salle de traitement',
+    directions: 'Itinéraire',
+    mapTitle: 'Carte du 1600, avenue Laperriere, Ottawa',
+
+    ctaTop: 'Réserver',
+    ctaBot: 'ou appeler ?',
+    or: 'ou',
+    ctaNote: 'Dans les deux cas, demandez Abdallah.',
+    callAria: 'Appeler la clinique, 613-627-8808',
+    creditsLabel: 'Crédits des images :',
+    creditsTint: 'Les trois sont teintées en bleu.',
+    disclaimer: 'Les renseignements sur ce site sont généraux et ne remplacent pas une évaluation.'
+  },
+  // Strings used only by scripts (English versions here, since they are not in the HTML)
+  en: {
+    spinSpinning: 'The room is spinning…',
+    spinSettled: 'And it holds still.'
+  }
+};
