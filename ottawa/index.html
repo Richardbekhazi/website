@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Street Test · Orléans, Ottawa</title>
+<meta name="description" content="A driving game of a real Orléans (Ottawa) neighbourhood, built from OpenStreetMap and NRCan open data.">
+<style>
+  :root { --hud-bg: rgba(15, 20, 28, 0.72); --hud-fg: #f2f4f7; --accent: #ffc94d; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #9cc7e8; font-family: system-ui, "Segoe UI", sans-serif; }
+  canvas#view { display: block; }
+  .hud { position: fixed; color: var(--hud-fg); background: var(--hud-bg); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; pointer-events: none; }
+  /* speedometer, bottom centre (R54) */
+  #stats { left: 50%; bottom: 40px; transform: translateX(-50%); text-align: center; padding: 8px 22px 9px; border-radius: 16px; min-width: 120px; }
+  #stats .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  #stats .big small { font-size: 13px; font-weight: 600; opacity: 0.7; margin-left: 3px; }
+  #stats .row { font-size: 11px; opacity: 0.7; }
+  /* controls: a small pill that opens the full list (? key) */
+  #help { left: 16px; bottom: 16px; pointer-events: auto; cursor: pointer; max-width: min(560px, calc(100vw - 340px)); }
+  #help b { color: var(--accent); font-weight: 600; }
+  #help .list { display: none; margin-top: 6px; }
+  #help.open .list { display: block; }
+  #dest { right: 16px; top: 252px; font-size: 12px; padding: 6px 10px; display: flex; align-items: center; gap: 7px; }
+  #dest::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #2f8cff; border: 2px solid #fff; flex: none; }
+  #dest:empty { display: none; }
+  #mapbox { right: 16px; top: 16px; padding: 6px; }
+  #minimap { display: block; border-radius: 6px; }
+  #credit { right: 16px; bottom: 12px; font-size: 10px; padding: 3px 8px; opacity: 0.85; }
+  #crash { position: fixed; left: 50%; top: 30%; transform: translate(-50%, -50%) scale(0.6); font-size: 64px; font-weight: 900; color: #ff4d3d; text-shadow: 0 4px 0 #5a0d06, 0 0 24px rgba(255,80,40,.6); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; letter-spacing: 2px; }
+  #crash.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  /* street name as a City of Ottawa street-name blade: blue, white border, white letters (R54) */
+  #street { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: #1d4f9c; color: #fff; border-radius: 6px;
+    padding: 5px 18px; font: 700 17px Arial, sans-serif; letter-spacing: 0.5px; box-shadow: inset 0 0 0 2px #1d4f9c, inset 0 0 0 4px #fff, 0 3px 10px rgba(0,0,0,.35); white-space: nowrap; }
+  /* off the street: parks get a green sign, plazas a dark one (R55) */
+  #street.park { background: #2f6b3a; box-shadow: inset 0 0 0 2px #2f6b3a, inset 0 0 0 4px #fff, 0 3px 10px rgba(0,0,0,.35); }
+  #street.plaza { background: #33414f; box-shadow: inset 0 0 0 2px #33414f, inset 0 0 0 4px #fff, 0 3px 10px rgba(0,0,0,.35); }
+  /* neighbourhood under the sign, e.g. "Avalon · Orléans" */
+  #area { position: fixed; left: 50%; top: 50px; transform: translateX(-50%); color: #fff; font: 600 12px system-ui, "Segoe UI", sans-serif;
+    letter-spacing: 0.6px; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.4); white-space: nowrap; pointer-events: none; }
+  #area:empty { display: none; }
+  #homeBtn { position: fixed; right: 16px; top: 214px; font: 600 12px system-ui, "Segoe UI", sans-serif; color: var(--hud-fg); background: var(--hud-bg);
+    border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  #homeBtn:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 700px) { #help { display: none; } #minimap { width: 120px; height: 120px; } #homeBtn { top: 154px; } #dest { top: 192px; } }
+  /* loading screen (R54) */
+  #loader { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    background: radial-gradient(ellipse at 50% 35%, #2c4a6b 0%, #121a24 75%); color: #f2f4f7; transition: opacity .6s; }
+  #loader.gone { opacity: 0; pointer-events: none; }
+  #loader h1 { margin: 0; font-size: clamp(26px, 5vw, 44px); font-weight: 800; letter-spacing: 1px; }
+  #loader h1 span { color: var(--accent); }
+  #loader .sub { margin-top: -10px; opacity: .65; font-size: 14px; }
+  #loadRoad { position: relative; width: min(560px, 84vw); height: 30px; background: #3b3e43; border-radius: 6px; margin-top: 34px;
+    box-shadow: inset 0 3px 0 #2b2d31, 0 0 0 3px #8e9196; }
+  #loadRoad::after { content: ""; position: absolute; left: 10px; right: 10px; top: 14px; height: 3px;
+    background: repeating-linear-gradient(90deg, #f2c12e 0 18px, transparent 18px 34px); opacity: .9; }
+  #loadFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(255,201,77,.0), rgba(255,201,77,.28)); transition: width .35s; }
+  #loadCar { position: absolute; bottom: 14px; left: 0; width: 44px; transition: left .35s; filter: drop-shadow(0 3px 2px rgba(0,0,0,.5)); animation: bob .5s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+  #loadInfo { display: flex; justify-content: space-between; width: min(560px, 84vw); font-size: 14px; }
+  #loadMsg { opacity: .9; } #loadPct { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; }
+  #loader.error #loadMsg { color: #ff8a7a; }
+  @media (prefers-reduced-motion: reduce) { #loadCar { animation: none; } }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="loader">
+  <h1>Street <span>Test</span></h1>
+  <div class="sub">Orléans, Ottawa · built from real map data</div>
+  <div id="loadRoad"><div id="loadFill"></div>
+    <svg id="loadCar" viewBox="0 0 44 18" aria-hidden="true"><path d="M3 13 L3 9 Q4 7 9 6.5 L14 3 Q16 2 20 2 L29 2 Q32 2 35 5.5 L40 7 Q42 7.6 42 10 L42 13 Z" fill="#f4f4f2" stroke="#9aa0a6" stroke-width=".8"/><path d="M15.5 4 Q17 3.2 20 3.2 L23.5 3.2 L23.5 6.4 L12.5 6.4 Z M25 3.2 L29 3.2 Q31.2 3.2 33.4 6.4 L25 6.4 Z" fill="#2b3640"/><path d="M40 8.6 L42 9.2 L42 10.4 L40.2 10.2 Z" fill="#ffd36b"/><path d="M3 9.4 L4.6 9.4 L4.6 11 L3 11 Z" fill="#e0302a"/><circle cx="11" cy="13.4" r="3.6" fill="#1b1c1e"/><circle cx="11" cy="13.4" r="1.6" fill="#a9adb2"/><circle cx="34" cy="13.4" r="3.6" fill="#1b1c1e"/><circle cx="34" cy="13.4" r="1.6" fill="#a9adb2"/></svg>
+  </div>
+  <div id="loadInfo"><span id="loadMsg">Getting ready…</span><span id="loadPct">0%</span></div>
+</div>
+<div id="stats" class="hud">
+  <div class="big" id="speed">0<small>km/h</small></div>
+  <div class="row" id="mode">Chase camera</div>
+</div>
+<div id="dest" class="hud"></div>
+<div id="street" class="hud">Establish Avenue</div>
+<div id="area"></div>
+<div id="mapbox" class="hud"><canvas id="minimap" width="180" height="180"></canvas></div>
+<div id="help" class="hud" title="Show / hide the controls (?)"><b>?</b> Controls<div class="list">
+  <b>W/S</b> or <b>↑/↓</b> drive · <b>A/D</b> or <b>←/→</b> steer · <b>Space</b> brake<br>
+  <b>Enter</b> or <b>E</b> get out / get in · <b>M</b> or click minimap: big map (click to go there) · <b>N</b> street names on road · <b>Q</b> call your car · <b>Shift</b> run · <b>C</b> change camera · <b>R</b> reset to home · <b>H</b> hill size · <b>P</b> paint colour
+</div></div>
+<div id="credit" class="hud">© OpenStreetMap contributors · Lidar: NRCan HRDEM (OGL-Canada) · CDEM · Textures: ambientCG, Poly Haven (CC0)</div>
+<div id="crash">CRASH!</div>
+
+<!-- loading screen first; LOADING.step(k) before each script moves its bar. Game code in load order (see PROJECT.md) -->
+<script src="js/loader.js"></script>
+<script>LOADING.step(0)</script><script src="data/map.js"></script>
+<script>LOADING.step(1)</script><script src="data/terrain.js"></script>
+<script>LOADING.step(2)</script><script src="data/lidar.js"></script>
+<script>LOADING.step(3)</script><script src="data/textures.js"></script><!-- CC0 photo textures + sky (tools/textures.py) -->
+<script>LOADING.step(4)</script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>LOADING.step(5)</script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script><!-- loads the Blender car -->
+<script>LOADING.step(6)</script><script src="data/car.js"></script><!-- QX50 model (tools/blender/qx50.py) -->
+<script>LOADING.step(8)</script><script src="js/core.js"></script>
+<script>LOADING.step(9)</script><script src="js/ground.js"></script>
+<script>LOADING.step(10)</script><script src="js/roads.js"></script>
+<script>LOADING.step(11)</script><script src="js/buildings.js"></script>
+<script>LOADING.step(12)</script><script src="js/furniture.js"></script>
+<script>LOADING.step(13)</script><script src="js/parks.js"></script>
+<script>LOADING.step(14)</script><script src="js/labels.js"></script>
+<script>LOADING.step(15)</script><script src="js/trees.js"></script>
+<script>LOADING.step(16)</script><script src="js/car.js"></script>
+<script>LOADING.step(17)</script><script src="js/game.js"></script>
+<script>LOADING.finish()</script>
+</body>
+</html>
