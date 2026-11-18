@@ -225,7 +225,8 @@ mark.ph {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2vw; align-items: stretch;
 }
 .hero__copy { position: relative; z-index: 2; align-self: center; display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; padding-bottom: var(--py); }
-.hero__title { font: 600 var(--fs-xl) / 0.9 var(--serif); letter-spacing: -0.035em; }
+/* The bottom padding keeps the tail of the "j" in Najem clear of the line beneath it */
+.hero__title { font: 600 var(--fs-xl) / 0.9 var(--serif); letter-spacing: -0.035em; padding-bottom: 0.07em; }
 .hero__mask { display: block; overflow: hidden; padding: 0.04em 0.06em 0.24em 0; margin-bottom: -0.24em; }
 .hero__mask--b { padding-left: 0.85em; }
 .hero__w { display: block; }
