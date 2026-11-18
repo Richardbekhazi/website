@@ -4,81 +4,141 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Abdallah Najem website: five versions</title>
+  <meta name="theme-color" content="#16181b">
+  <title>Abdallah Najem: six versions of the website</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var d = document.documentElement;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      d.classList.add('anim');
+      window.addEventListener('DOMContentLoaded', function () { requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('is-in'); }); }); });
+      setTimeout(function () { d.classList.add('is-in'); }, 2500);
+    })();
+  </script>
   <style>
-    :root { --ink: #0c1b33; --muted: #47546b; --bg: #f4f6f9; --accent: #2456d6; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-    main { max-width: 1120px; margin: 0 auto; padding: clamp(32px, 6vw, 80px) clamp(16px, 4vw, 40px); }
-    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; letter-spacing: -0.02em; }
-    .intro { margin: 16px 0 0; max-width: 56ch; color: var(--muted); }
-    ul { list-style: none; margin: clamp(32px, 5vw, 56px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
-    a.card { display: flex; flex-direction: column; height: 100%; background: #fff; color: inherit; text-decoration: none; transition: transform 0.25s; }
-    a.card:hover, a.card:focus-visible { transform: translateY(-4px); }
-    a.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-    .card img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; background: #e6eaf1; }
-    .card div { padding: 20px 22px 24px; display: grid; gap: 6px; }
-    .card strong { font-size: 1.375rem; }
-    .card span { color: var(--muted); font-size: 1rem; }
-    .card em { font-style: normal; font-weight: 600; color: var(--accent); margin-top: 6px; }
+    :root { --ink: #16181b; --bone: #f3f0e8; --wall: #e7e3d9; --yellow: #ffd13b; --sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif; --ease: cubic-bezier(0.22, 1, 0.36, 1); --px: clamp(1rem, 3.4vw, 3rem); }
+    *, *::before, *::after { box-sizing: border-box; }
+    * { margin: 0; }
+    body { background: var(--wall); color: var(--ink); font: 400 1.0625rem/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    :focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+
+    .top { background: var(--ink); color: var(--bone); padding: clamp(2rem, 6vw, 4.5rem) var(--px) clamp(2rem, 5vw, 3.5rem); display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.5rem clamp(2rem, 5vw, 5rem); align-items: end; }
+    h1 { font: 800 clamp(2.75rem, 6.3vw, 6.75rem) / 0.9 var(--sans); font-stretch: 106%; letter-spacing: -0.045em; text-wrap: balance; }
+    .top p { font-size: clamp(1.0625rem, 1.5vw, 1.375rem); line-height: 1.4; max-width: 30em; }
+    .top strong { font-weight: 700; }
+
+    .wall { list-style: none; padding: clamp(1.5rem, 4vw, 3rem) var(--px) clamp(3rem, 7vw, 5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 2.4vw, 2rem); }
+    .card { display: grid; gap: 0.9rem; text-decoration: none; height: 100%; align-content: start; }
+    .card__shot { overflow: hidden; aspect-ratio: 16 / 10; background: var(--bone); }
+    .card__shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: scale 0.7s var(--ease); }
+    .card:hover .card__shot img, .card:focus-visible .card__shot img { scale: 1.045; }
+    .card__name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.1rem 0.7rem; }
+    .card__name b { font: 800 clamp(1.75rem, 2.9vw, 2.6rem) / 1 var(--sans); font-stretch: 106%; letter-spacing: -0.035em; }
+    .card__name span { font-weight: 600; font-size: 1.0625rem; }
+    .card__text { max-width: 34em; }
+    .card__foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 0.15rem; }
+    .card__open { display: inline-flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0 1.1rem; background: var(--ink); color: var(--bone); font-weight: 700; transition: background 0.2s, color 0.2s; }
+    .card__open svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.9; transition: translate 0.25s var(--ease); }
+    .card:hover .card__open, .card:focus-visible .card__open { background: var(--yellow); color: var(--ink); }
+    .card:hover .card__open svg { translate: 2px -2px; }
+    .card__inks { display: flex; }
+    .card__inks i { width: 1.5rem; height: 1.5rem; }
+
+    .end { background: var(--ink); color: var(--bone); padding: 1.5rem var(--px); font-size: 0.9375rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
+
+    .anim .top > *, .anim .wall > li { opacity: 0; translate: 0 1.5rem; }
+    .anim.is-in .top > *, .anim.is-in .wall > li { opacity: 1; translate: none; transition: opacity 0.7s var(--ease), translate 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 80ms); }
+
+    @media (max-width: 1100px) { .wall { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 620px) { .wall { grid-template-columns: minmax(0, 1fr); } }
   </style>
 </head>
 <body>
+  <header class="top">
+    <h1 style="--d: 0">Six versions, one to choose</h1>
+    <p style="--d: 1">Six designs for the website of <strong>Abdallah Najem</strong>, physiotherapist in Ottawa. Open each one, try it on a phone too, and say which you like. Every version has a French switch in its top bar.</p>
+  </header>
+
   <main>
-    <h1>Five versions of the website</h1>
-    <p class="intro">Open each one, scroll all the way down, and try it on a phone too. Each version also has a French switch in the top bar.</p>
-    <ul>
-      <li>
+    <ul class="wall">
+      <li style="--d: 2">
         <a class="card" href="v1/">
-          <img src="previews/v1.jpg" alt="First screen of version 1">
-          <div>
-            <strong>Version 1</strong>
-            <span>White and blue, with the waves. Name and portrait in the first screen, services that scroll sideways.</span>
-            <em>Open version 1</em>
-          </div>
+          <span class="card__shot"><img src="previews/v1.jpg" width="1440" height="900" alt="First screen of version 1"></span>
+          <span class="card__name"><b>Version 1</b><span>Waves</span></span>
+          <span class="card__text">White and blue, with waves under the first screen. His name and portrait open the page, and the services scroll sideways.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 1 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#ffffff"></i><i style="background:#9fc2ec"></i><i style="background:#1f5fbf"></i><i style="background:#0b1f3a"></i></span>
+          </span>
         </a>
       </li>
-      <li>
+      <li style="--d: 3">
         <a class="card" href="v2/">
-          <img src="previews/v2.jpg" alt="First screen of version 2">
-          <div>
-            <strong>Version 2</strong>
-            <span>Poster style on a stone background. “Ask for Abdallah” as the headline, with the portrait opening out of it.</span>
-            <em>Open version 2</em>
-          </div>
+          <span class="card__shot"><img src="previews/v2.jpg" width="1440" height="900" alt="First screen of version 2"></span>
+          <span class="card__name"><b>Version 2</b><span>Poster</span></span>
+          <span class="card__text">“Ask for Abdallah” as a giant headline on stone grey, with the portrait opening out of it.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 2 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#dfdedb"></i><i style="background:#ffffff"></i><i style="background:#2456d6"></i><i style="background:#26251e"></i></span>
+          </span>
         </a>
       </li>
-      <li>
+      <li style="--d: 4">
         <a class="card" href="v3/">
-          <img src="previews/v3.jpg" alt="First screen of version 3">
-          <div>
-            <strong>Version 3</strong>
-            <span>Version 1’s warmer opening and brand colours, redrawn, with version 2’s lower half.</span>
-            <em>Open version 3</em>
-          </div>
+          <span class="card__shot"><img src="previews/v3.jpg" width="1440" height="900" alt="First screen of version 3"></span>
+          <span class="card__name"><b>Version 3</b><span>Blend</span></span>
+          <span class="card__text">The warm opening and brand blue of version 1, redrawn, with the lower half of version 2.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 3 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#f4f6f9"></i><i style="background:#9bbbf0"></i><i style="background:#2456d6"></i><i style="background:#0c1b33"></i></span>
+          </span>
         </a>
       </li>
-      <li>
+      <li style="--d: 5">
         <a class="card" href="v4/">
-          <img src="previews/v4.jpg" alt="First screen of version 4">
-          <div>
-            <strong>Version 4</strong>
-            <span>The whole site moves sideways. Cream, forest green, tangerine and butter yellow, with a serif typeface and a room that tilts as you travel. A button in the top bar switches it to an ordinary vertical page.</span>
-            <em>Open version 4</em>
-          </div>
+          <span class="card__shot"><img src="previews/v4.jpg" width="1440" height="900" alt="First screen of version 4"></span>
+          <span class="card__name"><b>Version 4</b><span>Sideways</span></span>
+          <span class="card__text">The whole site moves from left to right, in cream, forest green and tangerine with a serif typeface. A button switches it to an ordinary vertical page.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 4 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#f4ecdd"></i><i style="background:#f7cf5c"></i><i style="background:#ff6a3d"></i><i style="background:#12302a"></i></span>
+          </span>
         </a>
       </li>
-      <li>
+      <li style="--d: 6">
         <a class="card" href="v5/">
-          <img src="previews/v5.jpg" alt="First screen of version 5">
-          <div>
-            <strong>Version 5</strong>
-            <span>The boldest. Dark plum with lilac and lime, rings of type that turn around him, and service cards that stack.</span>
-            <em>Open version 5</em>
-          </div>
+          <span class="card__shot"><img src="previews/v5.jpg" width="1440" height="900" alt="First screen of version 5"></span>
+          <span class="card__name"><b>Version 5</b><span>Rings</span></span>
+          <span class="card__text">Deep violet with lilac and lime. Rings of type turn around the portrait, and the service cards stack as you scroll.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 5 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#f4f0fb"></i><i style="background:#d6ff45"></i><i style="background:#b9a5ff"></i><i style="background:#1d1136"></i></span>
+          </span>
+        </a>
+      </li>
+      <li style="--d: 7">
+        <a class="card" href="v6/">
+          <span class="card__shot"><img src="previews/v6.jpg" width="1440" height="900" alt="First screen of version 6"></span>
+          <span class="card__name"><b>Version 6</b><span>Still, the newest</span></span>
+          <span class="card__text">Nothing scrolls. Seven colour sheets share one screen: point at a colour and it slides open, point at a word and its details appear.</span>
+          <span class="card__foot">
+            <span class="card__open">Open version 6 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#f3f0e8"></i><i style="background:#ff86a8"></i><i style="background:#0f5c61"></i><i style="background:#ffd13b"></i><i style="background:#9fd3ff"></i><i style="background:#f4492f"></i><i style="background:#16181b"></i></span>
+          </span>
         </a>
       </li>
     </ul>
   </main>
+
+  <footer class="end">
+    <p>These pages are previews and are hidden from search engines.</p>
+    <p>Hours, fees, direct billing and reviews are still placeholders in every version.</p>
+  </footer>
 </body>
 </html>

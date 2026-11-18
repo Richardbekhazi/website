@@ -1,0 +1,444 @@
+/*
+  Abdallah Najem, version 6: a page that holds still.
+  One fixed screen of seven colour sheets. Nothing scrolls: pointing at a sheet slides it open,
+  and inside a sheet, pointing at a word shows what belongs to it.
+  The colours come from the tools on his treatment room wall: the pink ball, the teal roller,
+  the yellow door of the training area.
+  Sizes inside a sheet are set from the sheet itself (container units), so the content
+  always fits the space it has.
+*/
+:root {
+  --bone: #f3f0e8;
+  --ink: #16181b;
+  --pink: #ff86a8;
+  --teal: #0f5c61;
+  --yellow: #ffd13b;
+  --sky: #9fd3ff;
+  --red: #f4492f;
+  --sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --bar: 4rem;
+  --s: clamp(3.25rem, 4.7vw, 4.75rem);   /* the width of a closed sheet */
+  --n: 7;                                /* how many sheets */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --slide: 0.7s;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background: var(--ink); color: var(--ink); font: 400 1rem/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+img, picture, iframe { display: block; max-width: 100%; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+h1, h2, h3 { font-weight: 800; text-wrap: balance; }
+p { text-wrap: pretty; }
+:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 1rem; top: -4rem; z-index: 50; padding: 0.75rem 1rem; background: var(--yellow); color: var(--ink); font-weight: 700; }
+.skip:focus { top: 0.75rem; }
+
+/* ---------- The bar ---------- */
+.bar { position: sticky; top: 0; z-index: 30; height: var(--bar); display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 clamp(0.9rem, 1.7vw, 1.5rem); background: var(--ink); color: var(--bone); }
+.bar__mark { display: inline-flex; align-items: center; gap: 0.7rem; min-height: 2.75rem; text-decoration: none; font: 700 1.125rem/1 var(--sans); letter-spacing: -0.01em; white-space: nowrap; }
+.bar__mark svg { width: 1.75rem; height: 1.25rem; flex: none; }
+.bar__act { display: flex; align-items: center; gap: clamp(0.5rem, 1.2vw, 1rem); }
+.bar__tel { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.4rem; font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar__tel:hover { text-decoration: underline; text-underline-offset: 0.25em; text-decoration-thickness: 2px; }
+.bar__lang { width: 2.75rem; height: 2.75rem; border: 0; background: #2b2e33; color: var(--bone); font-weight: 700; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.bar__lang:hover { background: var(--bone); color: var(--ink); }
+
+/* ---------- Buttons and links: square, flat ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.7rem; min-height: 3.25rem; padding: 0 1.35rem; border: 0; border-radius: 0; background: var(--fg, var(--ink)); color: var(--bg, var(--bone)); font: 700 1rem/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer; transition: translate 0.25s var(--ease), background 0.2s, color 0.2s; }
+.btn svg { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.9; transition: translate 0.25s var(--ease); }
+.btn:hover { translate: 0 -2px; }
+.btn:hover svg { translate: 2px -2px; }
+.btn:active { translate: 0 1px; }
+.btn--ghost { background: var(--tone); color: var(--fg); }
+.btn--ghost:hover { background: var(--fg); color: var(--bg); }
+.btn--bar { min-height: 2.75rem; padding: 0 1.1rem; background: var(--yellow); color: var(--ink); }
+.btn__short { display: none; }
+.link { font-weight: 600; text-underline-offset: 0.22em; text-decoration-thickness: 2px; background: none; border: 0; padding: 0; cursor: pointer; text-decoration-line: underline; }
+.link:hover { text-decoration-thickness: 3px; }
+.ph { font-weight: 600; background: var(--tone); padding: 0.1em 0.35em; }
+
+/* ---------- The sheets ---------- */
+.sheet { background: var(--bg); color: var(--fg); --tone: color-mix(in srgb, var(--fg) 13%, var(--bg)); }
+.sheet--hello { --bg: var(--bone); --fg: var(--ink); }
+.sheet--about { --bg: var(--pink); --fg: var(--ink); }
+.sheet--care { --bg: var(--teal); --fg: var(--bone); }
+.sheet--dizzy { --bg: var(--ink); --fg: var(--bone); }
+.sheet--visit { --bg: var(--yellow); --fg: var(--ink); }
+.sheet--faq { --bg: var(--sky); --fg: var(--ink); }
+.sheet--clinic { --bg: var(--red); --fg: var(--ink); }
+
+.spine { display: none; }
+.dock__call { display: none; }
+.hello__cue { display: none; }
+
+/* Type inside a sheet */
+.in {
+  --pb: clamp(1.1rem, 4.6cqh, 2.75rem);
+  --px: clamp(1.1rem, 4cqw, 3rem);
+  --t: clamp(0.9375rem, min(2.25cqh, 4.2cqw), 1.25rem);
+  --st: clamp(1.0625rem, min(3.2cqh, 5.6cqw), 1.75rem);
+  --in: 0.8rem;   /* how far a highlighted row reaches left of the text edge */
+  --h: clamp(1.75rem, min(9.5cqh, 7.2cqw), 5rem);
+  padding: var(--pb) var(--px);
+  font-size: var(--t);
+}
+.h { font: 800 var(--h) / 0.95 var(--sans); font-stretch: 106%; letter-spacing: -0.035em; }
+.st { font-size: var(--st); line-height: 1.3; font-weight: 500; }
+.lead { font-size: calc(var(--t) * 1.12); max-width: 34em; }
+.in h3 { font: 700 var(--st) / 1.15 var(--sans); letter-spacing: -0.01em; }
+
+/* ---------- Pointing at a word: a small set of tabs and what each one shows ---------- */
+.pick__tabs { display: none; }
+.pick__back { display: none; }
+.pane + .pane { margin-top: 2rem; }
+
+.js .pick__tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.js .pick__tabs button { border: 0; border-radius: 0; background: none; padding: 0.5em 0.75em; font-weight: 700; line-height: 1.15; text-align: left; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.js .pick__tabs button:hover { background: var(--tone); }
+.js .pick__tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+.js .pick__panes { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.js .pane { grid-area: 1 / 1; min-width: 0; min-height: 0; margin: 0; transition: opacity 0.3s, visibility 0.3s; }
+.js .pane:not(.is-on) { visibility: hidden; opacity: 0; }
+.pick--list .pick__tabs { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+
+/* ---------- 1. Hello ---------- */
+.hello__title { font: 800 clamp(3rem, 14vw, 7rem) / 0.86 var(--sans); font-stretch: 104%; letter-spacing: -0.045em; }
+.hello__role { font: 700 var(--st) / 1.15 var(--sans); letter-spacing: -0.01em; max-width: 24ch; }
+.hello__lead { font-size: calc(var(--t) * 1.15); line-height: 1.42; max-width: 30em; }
+.hello__act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem 1.25rem; }
+.call { display: grid; gap: 0.15rem; font-size: 0.9375rem; line-height: 1.3; }
+.call a { font-weight: 700; font-size: 1.0625rem; text-underline-offset: 0.22em; text-decoration-thickness: 2px; font-variant-numeric: tabular-nums; }
+.hello__fig img { width: min(100%, 24rem); height: auto; }
+
+/* ---------- 2. About ---------- */
+.about__letter { display: grid; gap: 0.85em; align-content: start; max-width: 36em; }
+.glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(0.75rem, 3cqh, 1.75rem) clamp(1rem, 3cqw, 2rem); align-content: start; }
+.glance dt { font: 800 clamp(2.75rem, 11.5cqh, 6.25rem) / 0.82 var(--sans); font-stretch: 106%; letter-spacing: -0.05em; font-variant-numeric: lining-nums; }
+.glance dd { margin-top: 0.4em; font-weight: 500; line-height: 1.3; max-width: 22ch; }
+.pick--langs .pick__tabs { gap: 0; flex-wrap: nowrap; }
+.pick--langs .pick__tabs button { font-size: var(--t); padding: 0.5em 0.65em; white-space: nowrap; }
+.pick--langs .pane { display: grid; gap: 0.3rem; align-content: start; }
+.say { font: 800 clamp(1.4rem, 5.4cqh, 2.75rem) / 1.05 var(--sans); letter-spacing: -0.03em; }
+.about__fig { margin: 0; min-height: 0; overflow: hidden; }
+.js .about__fig picture { height: 100%; }
+.about__fig img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; mix-blend-mode: multiply; }
+.say[lang="ar"] { letter-spacing: 0; font-weight: 700; }
+.lv { font-weight: 600; }
+.pick--langs .pick__panes { margin-top: 0.6rem; }
+
+/* ---------- 3. Care ---------- */
+.care__head { display: grid; gap: 0.9rem; align-content: start; }
+.pick--care .pick__tabs button { font-size: clamp(1.2rem, 5.1cqh, 2.7rem); letter-spacing: -0.025em; font-weight: 700; padding: 0.26em var(--in); }
+.svc picture, .step picture, .place picture { overflow: hidden; min-height: 0; background: var(--tone); }
+.svc img, .step img, .place img { width: 100%; height: 100%; object-fit: cover; }
+.svc__text { display: grid; gap: 0.55em; align-content: start; }
+.svc__problem { font-weight: 600; }
+
+/* ---------- 4. Dizziness ---------- */
+.dizzy__copy { display: grid; gap: clamp(0.7rem, 2.6cqh, 1.4rem); align-content: center; }
+.dizzy__try { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.dizzy__status { font-weight: 600; min-height: 1.5em; }
+.room { --rw: min(50cqw, 100cqh - 8rem); width: var(--rw); max-width: 100%; display: grid; gap: 0.7rem; align-content: center; justify-items: start; }
+.room__frame { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--tone); }
+.room__frame img { width: 100%; height: 100%; object-fit: cover; scale: 1.24; will-change: transform; }
+.room figcaption { font-size: 0.9375rem; line-height: 1.35; max-width: 34em; }
+.room__hint { display: none; }
+
+/* ---------- 5. Your visit ---------- */
+.visit__head { display: grid; gap: 0.75rem; align-content: start; }
+.pick--steps .pick__tabs button { font: 800 clamp(1.5rem, 6.4cqh, 3.5rem) / 1 var(--sans); font-stretch: 106%; letter-spacing: -0.035em; padding: 0.18em var(--in); }
+.step__text { display: grid; gap: 0.6rem; align-content: end; }
+.step__text .st { font-size: clamp(1.0625rem, 3.7cqh, 2rem); line-height: 1.24; }
+
+/* ---------- 6. Questions ---------- */
+.pick--faq .pick__tabs button { font-size: calc(var(--t) * 1.2); font-weight: 600; padding: 0.62em var(--in); }
+.qa { display: grid; gap: 0.8em; align-content: start; }
+.qa p { font-size: var(--st); line-height: 1.36; }
+.qa .ph { justify-self: start; font-size: var(--t); }
+.faq__insta { display: grid; gap: 0.9rem; }
+.faq__insta p { max-width: 26em; }
+.faq__posts { list-style: none; padding: 0; display: flex; gap: 0.6rem; flex: none; }
+.faq__posts a { display: block; transition: translate 0.3s var(--ease); }
+.faq__posts a:hover { translate: 0 -4px; }
+.faq__posts img { height: clamp(4.5rem, 13.5cqh, 9rem); width: auto; aspect-ratio: 4 / 5; object-fit: cover; }
+
+/* ---------- 7. Clinic ---------- */
+.clinic__copy { display: grid; gap: clamp(0.8rem, 2.8cqh, 1.5rem); align-content: start; }
+.clinic__card { font-style: normal; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.9rem 1.5rem; line-height: 1.45; }
+.clinic__card p:last-child { grid-column: 1 / -1; }
+.clinic__card a { overflow-wrap: anywhere; }
+.clinic__act { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.place { margin: 0; }
+.place iframe { width: 100%; height: 100%; min-height: 12rem; border: 0; background: var(--tone); }
+.js .place iframe { min-height: 0; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; font-size: 0.875rem; line-height: 1.4; }
+.foot__links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.tip { position: relative; }
+.tip__box { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+.tip__btn { display: none; }
+
+/* ============================================================
+   With scripts: one screen that holds still
+   ============================================================ */
+.js, .js body { height: 100%; overflow: hidden; }
+.js body { display: grid; grid-template-rows: var(--bar) minmax(0, 1fr); height: 100svh; }
+.js .bar { position: relative; }
+.js .deck { position: relative; overflow: hidden; container: deck / size; outline: 0; }
+
+.js .sheet {
+  --w: calc(100cqw - (var(--n) - 1) * var(--s));
+  position: absolute; inset: 0 auto 0 0; width: var(--w); z-index: calc(var(--i) + 1);
+  display: grid; grid-template-columns: var(--s) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+  transform: translate3d(calc(var(--i) * var(--s) + var(--after, 0) * (var(--w) - var(--s))), 0, 0);
+  transition: transform var(--slide) var(--ease);
+}
+.js .sheet.is-after { --after: 1; }
+
+.js .spine { display: flex; justify-content: center; align-items: flex-start; grid-column: 1; grid-row: 1; border: 0; border-radius: 0; background: none; color: inherit; padding: clamp(1rem, 3.4vh, 1.9rem) 0; cursor: pointer; font: 700 clamp(1.125rem, 3.1vh, 1.7rem) / 1 var(--sans); letter-spacing: -0.015em; }
+.js .spine span { writing-mode: vertical-rl; white-space: nowrap; transition: translate 0.35s var(--ease); }
+.js .sheet:not(.is-open) .spine:hover span { translate: 0 0.4rem; }
+.js .sheet.is-open .spine { cursor: default; }
+.js .spine:focus-visible { outline-offset: -6px; }
+
+.js .body { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden auto; container: body / size; scrollbar-width: thin; }
+.js .in { height: 100%; padding-left: var(--in); }
+.js .hello__cue { display: block; }
+.js .tip__btn { display: inline; }
+.js .tip__box { position: absolute; z-index: 5; right: 0; bottom: calc(100% + 0.6rem); width: min(23rem, 78cqw); margin: 0; padding: 1rem 1.1rem; background: var(--ink); color: var(--bone); visibility: hidden; opacity: 0; translate: 0 0.4rem; transition: opacity 0.2s, translate 0.2s, visibility 0.2s; }
+.js .tip:hover .tip__box, .js .tip:focus-within .tip__box, .js .tip.is-open .tip__box { visibility: visible; opacity: 1; translate: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .js .room__hint { display: inline; }
+}
+@media (hover: none), (pointer: coarse) {
+  .cue--point { display: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .cue--tap { display: none; }
+}
+
+/* ----- Sheet layouts, wide ----- */
+.js .in--hello { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); gap: clamp(0.6rem, 2.6cqh, 1.6rem) clamp(1rem, 3cqw, 2.5rem); padding-bottom: 0; }
+.js .hello__title { grid-column: 1 / -1; font-size: min(21cqh, 11.9cqw); white-space: nowrap; }
+.js .hello__copy { display: flex; flex-direction: column; gap: clamp(0.65rem, 2.3cqh, 1.25rem); min-height: 0; padding-bottom: var(--pb); }
+.js .hello__cue { margin-top: auto; font: 700 var(--st) / 1.15 var(--sans); letter-spacing: -0.01em; max-width: 17ch; }
+.js .hello__fig { align-self: end; height: 100%; min-height: 0; margin: 0; display: flex; align-items: flex-end; }
+.js .hello__fig img { height: 100%; width: auto; max-width: 50cqw; aspect-ratio: 4 / 5; object-fit: contain; object-position: bottom; }
+
+.js .in--about { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: clamp(0.9rem, 3.2cqh, 2rem) clamp(1.5rem, 5cqw, 4rem); }
+.js .in--about .h { grid-column: 1 / -1; }
+.js .about__a, .js .about__b { display: flex; flex-direction: column; gap: clamp(0.9rem, 3cqh, 1.75rem); min-height: 0; }
+.js .about__fig { flex: 1 1 0; }
+.js .pick--langs { margin-top: auto; }
+
+.js .in--care { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head panes" "tabs panes"; gap: clamp(0.9rem, 3cqh, 1.75rem) clamp(1.5rem, 4.5cqw, 3.5rem); }
+.js .care__head { grid-area: head; }
+.js .pick--care { display: contents; }
+.js .pick--care .pick__tabs { grid-area: tabs; align-self: end; margin-left: calc(var(--in) * -1); }
+.js .pick--care .pick__panes { grid-area: panes; }
+.js .svc { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: clamp(0.8rem, 2.6cqh, 1.4rem); }
+
+.js .in--dizzy { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(1.5rem, 5cqw, 4rem); align-items: center; }
+
+.js .in--visit { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: clamp(0.8rem, 2.8cqh, 1.6rem); }
+.js .visit__head { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: end; gap: 1rem clamp(1.5rem, 4cqw, 3rem); }
+.js .pick--steps { display: contents; }
+.js .pick--steps .pick__tabs { margin-left: calc(var(--in) * -1); gap: 0 0.25rem; }
+.js .step { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(1.25rem, 4cqw, 3rem); }
+.js .step h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.js .in--faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "title title" "tabs panes" "insta panes"; gap: clamp(0.9rem, 3cqh, 1.75rem) clamp(1.25rem, 4cqw, 3rem); }
+.js .in--faq .h { grid-area: title; }
+.js .pick--faq { display: contents; }
+.js .pick--faq .pick__tabs { grid-area: tabs; margin-left: calc(var(--in) * -1); }
+.js .pick--faq .pick__panes { grid-area: panes; align-self: start; }
+.js .faq__insta { grid-area: insta; align-self: end; }
+.js .pick--faq .pick__panes { background: var(--tone); padding: clamp(1rem, 3.4cqh, 1.9rem) clamp(1rem, 3cqw, 1.9rem); }
+.js .pick--faq .qa h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.js .in--clinic { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "copy pick" "foot foot"; gap: clamp(0.8rem, 2.8cqh, 1.5rem) clamp(1.5rem, 4.5cqw, 3.5rem); }
+.js .clinic__copy { grid-area: copy; }
+.js .pick--places { grid-area: pick; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 0.6rem; min-height: 0; }
+.js .pick--places .pick__tabs { gap: 0; }
+.js .pick--places .pick__tabs button { font-size: calc(var(--t) * 0.9); padding: 0.55em 0.6em; white-space: nowrap; }
+.js .place, .js .place picture { height: 100%; }
+.js .foot { grid-area: foot; }
+
+/* ----- Sheets that are not very wide, or not very tall: the extras step aside ----- */
+@container body (max-width: 820px) {
+  .js .room { --rw: min(42cqw, 100cqh - 8rem); }
+  .js .qa p { font-size: calc(var(--t) * 1.12); line-height: 1.4; }
+  .js .faq__posts, .js .about__fig { display: none; }
+  .js .in--dizzy .st { font-size: calc(var(--t) * 1.15); }
+  .js .pick--care .pick__tabs button { font-size: clamp(1.1rem, 3.6cqh, 1.6rem); }
+  .js .clinic__copy .lead { display: none; }
+}
+@container body (max-height: 640px) {
+  .js .faq__posts, .js .about__fig { display: none; }
+  .js .clinic__copy .lead { display: none; }
+}
+
+/* ----- Narrow sheets (a tablet held upright, a narrow window): one column ----- */
+@container body (max-width: 640px) {
+  .js .in--hello { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
+  .js .hello__title { white-space: normal; font-size: min(13cqh, 18cqw); }
+  .js .hello__title span { display: block; }
+  .js .hello__copy { padding-bottom: 0; }
+  .js .hello__cue { margin-top: 0; max-width: none; }
+  .js .hello__fig { justify-content: center; }
+  .js .hello__fig img { max-width: 100%; }
+
+  .js .in--about { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr); }
+  .js .about__a, .js .about__b { display: contents; }
+  .js .about__letter { order: 1; }
+  .js .glance { order: 2; }
+  .js .pick--langs { order: 3; margin-top: 0; }
+  .js .glance div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.7rem; align-items: start; }
+  .js .glance dt { font-size: clamp(2.6rem, 9cqw, 3.75rem); min-width: 1.05em; }
+  .js .glance dd { margin: 0; font-size: calc(var(--t) * 0.9); line-height: 1.25; }
+  .js .svc picture { min-height: 6rem; }
+  .js .pick--faq .pick__tabs button { font-size: calc(var(--t) * 1.05); padding: 0.55em var(--in); }
+  .js .qa p { font-size: calc(var(--t) * 1.1); line-height: 1.42; }
+  .js .faq__posts { display: none; }
+  .js .in--care { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "head" "tabs" "panes"; }
+  .js .pick--care .pick__tabs { flex-direction: row; flex-wrap: wrap; margin-left: 0; align-self: start; gap: 0.3rem; }
+  .js .pick--care .pick__tabs button { font-size: calc(var(--t) * 1.05); padding: 0.5em 0.7em; background: var(--tone); }
+  .js .pick--care .pick__tabs button[aria-selected="true"] { background: var(--fg); }
+
+  .js .in--dizzy { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: start; }
+  .js .room { width: auto; height: 100%; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; }
+  .js .room__frame { height: 100%; width: auto; max-width: 100%; min-height: 5rem; }
+
+  .js .visit__head { grid-template-columns: minmax(0, 1fr); }
+  .js .pick--steps .pick__tabs { flex-wrap: nowrap; gap: 0; }
+  .js .pick--steps .pick__tabs button { font-size: min(6.4cqh, 6.2cqw); white-space: nowrap; }
+  .js .in { --h: clamp(1.75rem, min(9.5cqh, 9.4cqw), 5rem); }
+  .js .step { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+
+  .js .in--faq { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "title" "tabs" "panes"; }
+  .js .faq__insta { display: none; }
+  .js .pick--faq .pick__tabs { margin-left: 0; gap: 0.2rem; }
+  .js .pick--faq .pick__tabs button { background: var(--tone); }
+  .js .pick--faq .pick__tabs button[aria-selected="true"] { background: var(--fg); }
+
+  .js .in--clinic { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "copy" "pick" "foot"; }
+}
+
+/* ----- Narrow and short (a phone): the tightest composition ----- */
+@container body (max-width: 640px) and (max-height: 820px) {
+  .js .in { --pb: 0.9rem; --px: 1rem; padding-left: var(--px); }
+  .js .lead { font-size: var(--t); }
+
+  .js .in--hello { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "title title" "fig side" "lead lead" "act act"; gap: 0.7rem 0.9rem; padding-bottom: var(--pb); }
+  .js .hello__title { grid-area: title; font-size: min(12.5cqh, 18.2cqw); }
+  .js .hello__copy { display: contents; }
+  .js .hello__fig { grid-area: fig; height: 100%; align-self: stretch; }
+  .js .hello__fig img { height: 100%; max-width: 44cqw; }
+  .js .hello__role { grid-area: side; align-self: start; font-size: 1.0625rem; }
+  .js .hello__cue { grid-area: side; align-self: end; font-size: 0.875rem; font-weight: 600; }
+  .js .hello__lead { grid-area: lead; font-size: var(--t); }
+  .js .hello__act { grid-area: act; }
+  .js .hello__act .btn { flex: 1 1 auto; }
+  .js .hello__act .call > span { display: none; }
+
+  .js .in--about { gap: 0.7rem; }
+  .js .about__opt { display: none; }
+  .js .glance { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.9rem; }
+  .js .glance div { gap: 0.55rem; }
+  .js .glance dt { font-size: 2.6rem; }
+  .js .glance dd { font-size: 0.8125rem; }
+  .js .pick--langs .pick__tabs button { font-size: 0.9375rem; padding: 0.45em 0.6em; }
+  .js .say { font-size: 1.5rem; }
+  .js .lv { font-size: 0.875rem; }
+
+  .js .care__head .lead { display: none; }
+  .js .in--care { gap: 0.6rem; }
+  .js .svc { gap: 0.6rem; }
+  .js .svc picture { min-height: 3.5rem; }
+
+  .js .in--dizzy { gap: 0.7rem; }
+  .js .room { gap: 0.4rem; }
+  .js .room figcaption { font-size: 0.8125rem; }
+  .js .dizzy__status { min-height: 0; }
+
+  .js .in--visit { gap: 0.6rem; }
+  .js .visit__head .lead { display: none; }
+
+  .js .in--faq { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "title" "main"; gap: 0.7rem; }
+  .js .pick--faq { --md: 1; }
+  .js .pick--faq .pick__tabs, .js .pick--faq .pick__panes { grid-area: main; align-self: start; }
+  .js .pick--faq .pick__tabs button { font-size: 0.9375rem; padding: 0.6em 0.75em; }
+  .js .pick--faq:not(.is-detail) .pick__panes { display: none; }
+  .js .pick--faq.is-detail .pick__tabs { display: none; }
+  .js .pick--faq.is-detail .pick__panes { grid-template-rows: auto minmax(0, 1fr); padding: 0.9rem; }
+  .js .pick--faq.is-detail .pick__back { display: inline-flex; align-items: center; gap: 0.5rem; justify-self: start; grid-area: auto; min-height: 2.75rem; margin: -0.4rem 0 0.4rem; padding: 0; border: 0; background: none; font-weight: 700; cursor: pointer; }
+  .js .pick__back svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.9; }
+  .js .pick--faq.is-detail .pane { grid-area: 2 / 1; }
+  .js .pick--faq.is-detail .qa h3 { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; font-size: 1.125rem; }
+  .js .qa p { font-size: var(--t); line-height: 1.45; }
+
+  .js .in--clinic { gap: 0.6rem; }
+  .js .clinic__copy { gap: 0.6rem; }
+  .js .clinic__copy .lead { display: none; }
+  .js .clinic__card { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem 0.9rem; font-size: 0.875rem; }
+  .js .clinic__act .btn { flex: 1 1 auto; min-height: 2.75rem; padding: 0 0.8rem; font-size: 0.9375rem; }
+  .js .pick--places .pick__tabs button { font-size: 0.875rem; padding: 0.5em 0.6em; }
+  .js .place iframe { min-height: 0; }
+  .js .foot { font-size: 0.75rem; gap: 0.25rem 1rem; }
+}
+
+/* ----- Short and wide (a laptop window that is not tall) ----- */
+@media (max-height: 700px) and (min-width: 701px) {
+  :root { --bar: 3.5rem; }
+}
+
+/* ============================================================
+   A phone: the open sheet fills the screen above a dock of the seven colours
+   ============================================================ */
+@media (max-width: 700px) {
+  :root { --bar: 3.25rem; --dock: 2.9rem; }
+  .bar__tel { display: none; }
+  .bar__mark { font-size: 1rem; gap: 0.55rem; }
+  .btn__long { display: none; }
+  .btn__short { display: inline; }
+  .btn--bar { padding: 0 0.9rem; }
+
+  .js .deck { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) var(--dock) calc(var(--dock) + env(safe-area-inset-bottom, 0px)); }
+  .js .sheet { display: contents; }
+  .js .spine { grid-row: 2; grid-column: auto; z-index: 3; align-items: center; padding: 0 0.2rem; background: var(--bg); color: var(--fg); font-size: 0.875rem; font-weight: 700; letter-spacing: 0; transition: translate 0.6s var(--ease); }
+  .js .spine span { writing-mode: horizontal-tb; display: inline-flex; align-items: center; gap: 0.35rem; }
+  .js .sheet:not(.is-open) .spine:hover span { translate: none; }
+  .js .sheet.is-open .spine span::before { content: ""; width: 0.45rem; height: 0.45rem; background: currentColor; flex: none; }
+  .js .sheet:nth-of-type(n + 5) .spine, .js .dock__call { grid-row: 3; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .js .dock__call { display: flex; align-items: center; justify-content: center; gap: 0.4rem; z-index: 3; background: var(--bone); color: var(--ink); font-size: 0.875rem; font-weight: 700; text-decoration: none; }
+  .js .dock__call svg { width: 0.95rem; height: 0.95rem; fill: currentColor; }
+
+  .js .body { grid-area: 1 / 1 / 2 / -1; background: var(--bg); color: var(--fg); visibility: hidden; opacity: 0; translate: 0 1.25rem; transition: opacity 0.35s, translate 0.5s var(--ease), visibility 0.35s; }
+  .js .sheet.is-open .body { visibility: visible; opacity: 1; translate: none; z-index: 2; }
+}
+
+/* ============================================================
+   Motion: the sheets are dealt in, and each sheet's parts rise the first time it opens
+   ============================================================ */
+.anim .sheet { transition: transform var(--slide) var(--ease), translate 0.95s var(--ease) calc(var(--i) * 75ms); }
+.anim:not(.is-in) .sheet:not(.sheet--hello) { translate: 45cqw 0; }
+.anim [data-rise] { opacity: 0; translate: 0 1.4rem; }
+.anim .sheet.is-seen [data-rise] { opacity: 1; translate: none; transition: opacity 0.6s var(--ease) calc(var(--d, 0) * 70ms + 140ms), translate 0.8s var(--ease) calc(var(--d, 0) * 70ms + 140ms); }
+@media (max-width: 700px) {
+  .anim:not(.is-in) .spine, .anim:not(.is-in) .dock__call { translate: 0 220%; }
+  .anim .spine, .anim .dock__call { transition: translate 0.7s var(--ease) calc(var(--i, 7) * 45ms); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .sheet, .js .body, .js .pane, .btn, .btn svg, .js .spine span { transition: none; }
+}
+
+/* ----- The smallest phones ----- */
+@container body (max-width: 640px) and (max-height: 540px) {
+  .js .about__letter .st { display: none; }
+  .js .hello__lead { font-size: 0.9375rem; line-height: 1.38; }
+}
