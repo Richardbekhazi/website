@@ -5,6 +5,7 @@
   - the rail: where you are, a line that ripples while you move and lies flat when you stop
   - the room in the dizziness pane tilts with your speed and settles when you stop
   - entrances, numbers that count up
+  - a switch to an ordinary vertical page, for anyone the sideways line does not suit
   The page reads and scrolls (sideways) with this file missing.
 */
 (function () {
@@ -13,7 +14,8 @@
   var d = document;
   var root = d.documentElement;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var short = window.matchMedia('(max-height: 600px)'); // below this the CSS stacks the page vertically
+  var short = window.matchMedia('(max-height: 600px)'); // below this the page is always stacked
+  var vertical = root.classList.contains('is-vertical'); // set in the head: a very short window, or the reader's choice
   var motion = !reduce;
 
   function $(s, c) { return (c || d).querySelector(s); }
@@ -102,8 +104,10 @@
   var scroller = null;
   var track = null;
 
-  function sideways() { return !short.matches; }
+  function sideways() { return !vertical; }
   function sx() { return scroller ? scroller.scrollLeft : 0; }
+  // How far along the page we are, whichever way it runs.
+  function pos() { return vertical ? (window.pageYOffset || 0) : sx(); }
   function maxX() { return scroller ? Math.max(0, scroller.scrollWidth - scroller.clientWidth) : 0; }
 
   function measure() {
@@ -122,13 +126,19 @@
   function paneStart(i) { return i <= 0 ? 0 : lefts[i] + overlap; }
 
   function currentIndex() {
-    var x = sx() + window.innerWidth * 0.35;
     var idx = 0;
+    if (vertical) {
+      var line = window.innerHeight * 0.35;
+      for (var j = 0; j < panes.length; j++) if (panes[j].getBoundingClientRect().top <= line) idx = j;
+      return idx;
+    }
+    var x = sx() + window.innerWidth * 0.35;
     for (var i = 0; i < lefts.length; i++) if (lefts[i] <= x) idx = i;
     return idx;
   }
 
   function go(x, instant) {
+    if (vertical) { window.scrollTo({ left: 0, top: Math.max(0, x), behavior: reduce || instant ? 'auto' : 'smooth' }); return; }
     x = clamp(x, 0, maxX());
     if (lenis && !instant) lenis.scrollTo(x);
     else if (lenis) lenis.scrollTo(x, { immediate: true });
@@ -311,7 +321,7 @@
 
   function frame(time) {
     if (lenis) lenis.raf(time);
-    var x = sx();
+    var x = pos();
     var dx = x - lastX;
     lastX = x;
     vel += (dx - vel) * 0.2;
@@ -324,7 +334,7 @@
     else if (!flat || dx !== 0) { drawLine(0, 0); flat = true; }
 
     if (dx !== 0) railState(false);
-    roomStep(vel);
+    roomStep(vertical ? 0 : vel); // on the vertical page the room only turns when asked
 
     if (sideways()) {
       var mid = x + window.innerWidth / 2;
@@ -388,6 +398,52 @@
     if (tog) tog.addEventListener('click', function () { applyLang(lang === 'en' ? 'fr' : 'en'); });
   }
 
+  /* ---------- Sideways or vertical ---------- */
+  function layoutPref() {
+    var q = new URLSearchParams(window.location.search).get('layout');
+    if (q === 'vertical' || q === 'sideways') return q;
+    try { return localStorage.getItem('v4-layout'); } catch (e) { return null; }
+  }
+
+  // The two layouts are different enough that the page starts again, at the section you were reading.
+  function layoutSetup() {
+    $$('[data-layout-toggle]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var next = vertical ? 'sideways' : 'vertical';
+        var saved = false;
+        try { localStorage.setItem('v4-layout', next); saved = true; } catch (e) { /* private mode */ }
+        try { sessionStorage.setItem('v4-pane', String(currentIndex())); } catch (e) { /* private mode */ }
+        var url = new URL(window.location.href);
+        if (saved) url.searchParams.delete('layout'); else url.searchParams.set('layout', next);
+        url.hash = '';
+        if (history.replaceState) history.replaceState(null, '', url.pathname + url.search);
+        window.location.reload();
+      });
+    });
+  }
+
+  function restorePlace() {
+    var back = null;
+    try { back = sessionStorage.getItem('v4-pane'); sessionStorage.removeItem('v4-pane'); } catch (e) { /* private mode */ }
+    if (back === null) return false;
+    var i = clamp(parseInt(back, 10) || 0, 0, panes.length - 1);
+    // The browser would otherwise put the reloaded page back where the other layout was.
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    function place() {
+      if (vertical) {
+        var bar = $('.bar');
+        go(i > 0 ? panes[i].getBoundingClientRect().top + pos() - (bar ? bar.offsetHeight : 0) : 0, true);
+      } else {
+        go(paneStart(i), true);
+      }
+    }
+    place();
+    // Once more when the pictures are in, unless the reader has already moved on.
+    var placed = pos();
+    window.addEventListener('load', function () { if (Math.abs(pos() - placed) < 4) place(); });
+    return true;
+  }
+
   /* ---------- Start ---------- */
   function start() {
     panes = $$('.pane');
@@ -398,6 +454,7 @@
     railSetup();
     applyLang(initialLang(), true);
     smallThings();
+    layoutSetup();
     smooth();
     keys();
     anchors();
@@ -427,18 +484,23 @@
       }).observe(track);
     }
     // Crossing into or out of the stacked layout changes everything: start clean.
-    if (short.addEventListener) short.addEventListener('change', function () { window.location.reload(); });
+    if (short.addEventListener) short.addEventListener('change', function () {
+      root.classList.toggle('is-short', short.matches);
+      if ((short.matches || layoutPref() === 'vertical') !== vertical) window.location.reload();
+    });
 
-    if (window.location.hash.length > 1) {
+    if (restorePlace()) {
+      /* back at the section the reader was in before switching layout */
+    } else if (window.location.hash.length > 1) {
       var target = $(window.location.hash);
       if (target && sideways()) { var i = panes.indexOf(target); if (i > 0) go(paneStart(i), true); }
     }
 
     if (motion) {
-      lastX = sx();
+      lastX = pos();
       window.requestAnimationFrame(frame);
     } else {
-      scroller.addEventListener('scroll', function () { railState(false); drawLine(0, 0); }, { passive: true });
+      (vertical ? window : scroller).addEventListener('scroll', function () { railState(false); drawLine(0, 0); }, { passive: true });
     }
   }
 

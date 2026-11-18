@@ -1,0 +1,98 @@
+/*
+  Abdallah Najem, version 4, stacked: the same panes as an ordinary page that scrolls down.
+  Loaded for very short windows, and for anyone who presses "Vertical page" (the sideways
+  line is not comfortable for everyone). Nothing here moves with the scroll.
+*/
+:root {
+  --r: 2.25rem;
+  --rail: 0rem;
+  --gap: clamp(1.5rem, 3vw, 3rem);
+  --vy: clamp(3.5rem, 7vw, 6rem);
+  --edge: max(var(--px), calc((100vw - 80rem) / 2));
+}
+
+html { height: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: auto; font-size: 1em; scroll-padding-top: var(--bar); }
+body { height: auto; overflow: visible; padding-top: var(--bar); }
+.scroller { position: static; height: auto; overflow: visible; }
+.track, .track__main { display: block; width: auto; height: auto; }
+
+/* Each pane keeps its rounded edge, now along the top. */
+.pane {
+  width: auto; height: auto; flex-wrap: wrap; align-items: flex-start; gap: 2.5rem var(--gap);
+  padding: var(--vy) var(--edge) calc(var(--vy) + var(--r));
+  margin: calc(var(--r) * -1) 0 0;
+  border-radius: var(--r) var(--r) 0 0;
+}
+.pane > * { max-width: 100%; }
+.pane .lead { max-width: 34rem; }
+
+/* 1. Hello */
+.hero {
+  width: auto; margin: 0; border-radius: 0;
+  min-height: calc(100svh - var(--bar));
+  padding: var(--py) var(--edge) var(--r);
+}
+.hero__fig { height: min(calc(100svh - var(--bar) - var(--py) - var(--r)), 58vw); }
+.hero__cue { display: none; }
+.hero .call { display: flex; }
+
+/* 2. At a glance */
+.nums__list { width: 100%; height: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 2.5rem var(--gap); }
+.num { max-width: none; }
+.num--low { justify-content: flex-start; }
+.num__n { font-size: clamp(7rem, 15vw, 13rem); }
+
+/* 3. About */
+.about__head { width: 100%; max-width: none; }
+.about__first { --w: 25rem; }
+
+/* 4. Care and 8. Questions: a grid of cards under the heading */
+.care, .faq { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); align-items: start; }
+.care__intro, .faq__head { grid-column: 1 / -1; width: auto; }
+.svc, .svc--low, .qa, .qa--low { width: auto; align-self: start; }
+.svc__fig { width: 100%; height: auto; }
+
+/* 5. Dizziness: the room stays still here; only the button turns it */
+.spin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 26rem); align-items: center; }
+.spin__head { grid-column: 1 / -1; width: auto; max-width: none; }
+.spin__copy { width: auto; max-width: 32rem; }
+.spin__fig { width: auto; }
+.spin__hint { display: none; }
+
+/* 6. Your session, 9. Inside the clinic, 10. Instagram */
+.steps__head, .tour__head { width: 100%; }
+.step--flip { flex-direction: column; }
+.steps__list, .tour__prints, .insta__strip { flex-wrap: wrap; height: auto; align-items: flex-start; gap: 2.5rem var(--gap); padding-block: 0; }
+
+/* 7. Languages */
+.langs__list { max-width: 100%; }
+
+/* 11. Find the clinic */
+.clinic__map { flex: 1 1 22rem; width: auto; height: min(62svh, 30rem); min-height: 20rem; }
+
+/* 12. Book and the footer */
+.cta { min-width: 0; }
+.foot { padding-right: var(--edge); padding-bottom: var(--vy); }
+.foot__name { white-space: normal; }
+.foot__row { flex-wrap: wrap; gap: 2rem var(--gap); }
+
+/* The rail is for the sideways line; on phones it stays as the call and book bar. */
+.rail { display: none; }
+
+/* Entrances rise instead of sliding in from the side */
+.anim [data-in] { translate: 0 1.75rem; }
+
+@media (max-width: 900px) {
+  :root { --r: 1.5rem; --rail: 4rem; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; min-height: 0; padding: 2rem var(--edge) var(--r); }
+  .hero__copy { width: auto; padding-bottom: 0; }
+  .hero__fig { justify-self: center; height: min(62svh, 100vw); }
+  .letter { width: 100%; flex-direction: column; align-items: stretch; gap: 1.1rem; }
+  .letter .col { width: auto; }
+  .spin { grid-template-columns: minmax(0, 1fr); }
+  .spin__fig { width: min(22rem, 100%); justify-self: center; }
+  .foot { flex-direction: column; align-items: flex-start; padding-bottom: calc(var(--vy) + var(--rail)); }
+  .foot__name { width: auto; }
+  .rail { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0 var(--px); }
+  .rail__nav, .rail__line { display: none; }
+}

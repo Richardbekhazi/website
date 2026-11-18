@@ -181,6 +181,9 @@ window.I18N = {
 
     cueScroll: 'Défilez de côté',
     cueSwipe: 'Glissez de côté',
+    cueSwitch: 'ou passer à une page verticale',
+    modeV: 'Page verticale',
+    modeH: 'Page horizontale',
     railHello: 'Bienvenue',
     railLangs: 'Langues',
     railTour: 'La clinique',

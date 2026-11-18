@@ -29,6 +29,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Schibsted+Grotesk:wght@400;600&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/images/abdallah-cutout.webp" type="image/webp">
   <link rel="stylesheet" href="css/style.css">
+  <!-- The stacked page: always for very short windows, and for anyone who chooses it -->
+  <link rel="stylesheet" href="css/vertical.css" media="(max-height: 600px)" id="vertical-css">
+
+  <script>
+    // Sideways or vertical: the choice is remembered, and applied before the first paint.
+    (function () {
+      var d = document.documentElement, pref = null;
+      try { pref = localStorage.getItem('v4-layout'); } catch (e) { /* private mode */ }
+      var q = /[?&]layout=(vertical|sideways)/.exec(window.location.search);
+      if (q) pref = q[1];
+      var short = window.matchMedia && window.matchMedia('(max-height: 600px)').matches;
+      if (short) d.classList.add('is-short');
+      if (pref === 'vertical' || short) {
+        d.classList.add('is-vertical');
+        var l = document.getElementById('vertical-css');
+        if (l && pref === 'vertical') l.media = 'all';
+      }
+    })();
+  </script>
 
   <script>
     // Motion gate: entrance states exist only when motion is allowed, and a
@@ -98,6 +117,7 @@
       </ul>
     </nav>
     <div class="bar__act">
+      <button class="bar__mode" type="button" data-layout-toggle><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v13M4.5 5 8 1.5 11.5 5M4.5 11 8 14.5 11.5 11" /></svg><span class="mode-v" data-i18n="modeV">Vertical page</span><span class="mode-h" data-i18n="modeH">Sideways page</span></button>
       <button class="bar__lang" type="button" data-lang-toggle aria-label="Passer au français" data-i18n-attr="aria-label:langToggleLabel"><span data-i18n="langToggle">FR</span></button>
       <a class="btn btn--small bar__book" href="https://oprc.janeapp.com/#/staff_member/29" target="_blank" rel="noopener">
         <span class="btn__t" data-i18n="book">Book with Abdallah</span>
@@ -132,10 +152,11 @@
             <span class="call__note" data-i18n="askFor">Please ask for Abdallah when booking</span>
           </p>
         </div>
-        <p class="hero__cue" data-hero-item aria-hidden="true">
-          <span class="cue--wheel" data-i18n="cueScroll">Scroll sideways</span><span class="cue--touch" data-i18n="cueSwipe">Swipe sideways</span>
-          <svg viewBox="0 0 48 16"><path d="M0 8h45M38 2l7 6-7 6" /></svg>
-        </p>
+        <div class="hero__cue" data-hero-item>
+          <span class="cue--wheel" aria-hidden="true" data-i18n="cueScroll">Scroll sideways</span><span class="cue--touch" aria-hidden="true" data-i18n="cueSwipe">Swipe sideways</span>
+          <svg viewBox="0 0 48 16" aria-hidden="true"><path d="M0 8h45M38 2l7 6-7 6" /></svg>
+          <button class="hero__switch" type="button" data-layout-toggle data-i18n="cueSwitch">or switch to a vertical page</button>
+        </div>
       </div>
       <figure class="hero__fig" data-hero-fig>
         <span class="hero__sun" aria-hidden="true" data-speed="-0.07"></span>
