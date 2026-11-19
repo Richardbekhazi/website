@@ -82,30 +82,33 @@
 <div id="mapbox" class="hud"><canvas id="minimap" width="180" height="180"></canvas></div>
 <div id="help" class="hud" title="Show / hide the controls (?)"><b>?</b> Controls<div class="list">
   <b>W/S</b> or <b>↑/↓</b> drive · <b>A/D</b> or <b>←/→</b> steer · <b>Space</b> brake<br>
-  <b>Enter</b> or <b>E</b> get out / get in · <b>M</b> or click minimap: big map (click to go there) · <b>N</b> street names on road · <b>Q</b> call your car · <b>Shift</b> run · <b>C</b> change camera · <b>R</b> reset to home · <b>H</b> hill size · <b>P</b> paint colour
+  <b>Enter</b> or <b>E</b> get out / get in · <b>I</b> jump inside home · <b>M</b> or click minimap: big map (click to go there) · <b>N</b> street names on road · <b>Q</b> call your car · <b>Shift</b> run · <b>C</b> change camera · <b>R</b> reset to home · <b>H</b> hill size · <b>P</b> paint colour
 </div></div>
 <div id="credit" class="hud">© OpenStreetMap contributors · Lidar: NRCan HRDEM (OGL-Canada) · CDEM · Textures: ambientCG, Poly Haven (CC0)</div>
 <div id="crash">CRASH!</div>
+<button id="homeBtn" title="Go inside the house (I)">Go inside home (I)</button>
 
 <!-- loading screen first; LOADING.step(k) before each script moves its bar. Game code in load order (see PROJECT.md) -->
-<script src="js/loader.js?v=202611181755"></script>
-<script>LOADING.step(0)</script><script src="data/map.js?v=202611181755"></script>
-<script>LOADING.step(1)</script><script src="data/terrain.js?v=202611181755"></script>
-<script>LOADING.step(2)</script><script src="data/lidar.js?v=202611181755"></script>
-<script>LOADING.step(3)</script><script src="data/textures.js?v=202611181755"></script><!-- CC0 photo textures + sky (tools/textures.py) -->
+<script src="js/loader.js?v=202611182147"></script>
+<script>LOADING.step(0)</script><script src="data/map.js?v=202611182147"></script>
+<script>LOADING.step(1)</script><script src="data/terrain.js?v=202611182147"></script>
+<script>LOADING.step(2)</script><script src="data/lidar.js?v=202611182147"></script>
+<script>LOADING.step(3)</script><script src="data/textures.js?v=202611182147"></script><!-- CC0 photo textures + sky (tools/textures.py) -->
 <script>LOADING.step(4)</script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>LOADING.step(5)</script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script><!-- loads the Blender car -->
-<script>LOADING.step(6)</script><script src="data/car.js?v=202611181755"></script><!-- QX50 model (tools/blender/qx50.py) -->
-<script>LOADING.step(8)</script><script src="js/core.js?v=202611181755"></script>
-<script>LOADING.step(9)</script><script src="js/ground.js?v=202611181755"></script>
-<script>LOADING.step(10)</script><script src="js/roads.js?v=202611181755"></script>
-<script>LOADING.step(11)</script><script src="js/buildings.js?v=202611181755"></script>
-<script>LOADING.step(12)</script><script src="js/furniture.js?v=202611181755"></script>
-<script>LOADING.step(13)</script><script src="js/parks.js?v=202611181755"></script>
-<script>LOADING.step(14)</script><script src="js/labels.js?v=202611181755"></script>
-<script>LOADING.step(15)</script><script src="js/trees.js?v=202611181755"></script>
-<script>LOADING.step(16)</script><script src="js/car.js?v=202611181755"></script>
-<script>LOADING.step(17)</script><script src="js/game.js?v=202611181755"></script>
+<script>LOADING.step(6)</script><script src="data/car.js?v=202611182147"></script><!-- QX50 model (tools/blender/qx50.py) -->
+<script>LOADING.step(7)</script><script src="interior.js?v=202611182147"></script><!-- INTERIOR hook: walk-in home interior (interior session) -->
+<script>LOADING.step(8)</script><script src="js/core.js?v=202611182147"></script>
+<script>LOADING.step(9)</script><script src="js/ground.js?v=202611182147"></script>
+<script>LOADING.step(10)</script><script src="js/roads.js?v=202611182147"></script>
+<script>LOADING.step(11)</script><script src="js/buildings.js?v=202611182147"></script>
+<script>LOADING.step(12)</script><script src="js/furniture.js?v=202611182147"></script>
+<script>LOADING.step(13)</script><script src="js/parks.js?v=202611182147"></script>
+<script>LOADING.step(14)</script><script src="js/plazas.js?v=202611182147"></script>
+<script>LOADING.step(15)</script><script src="js/labels.js?v=202611182147"></script>
+<script>LOADING.step(16)</script><script src="js/trees.js?v=202611182147"></script>
+<script>LOADING.step(17)</script><script src="js/car.js?v=202611182147"></script>
+<script>LOADING.step(18)</script><script src="js/game.js?v=202611182147"></script>
 <script>LOADING.finish()</script>
 </body>
 </html>

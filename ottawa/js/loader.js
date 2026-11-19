@@ -19,6 +19,7 @@ window.LOADING = (function () {
     [() => 'Building ' + ((window.MAP_DATA && MAP_DATA.buildings.length) || 0).toLocaleString() + ' houses and shops…', 11],   // js/buildings.js
     ['Planting stop signs and lamp posts…', 20],    // js/furniture.js
     ['Setting up the swings at Ouellette Park…', 1],// js/parks.js
+    ['Painting the parking lots…', 1],              // js/plazas.js
     ['Painting the street names…', 2],              // js/labels.js
     ['Planting the trees…', 3],                     // js/trees.js
     ['Parking your car in the driveway…', 1],       // js/car.js

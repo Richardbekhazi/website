@@ -392,6 +392,17 @@ function rowStyle(row) {
 }
 
 const HOME_ROW = (() => { const i = M.buildings.findIndex(b => b.home); return i >= 0 ? rowOf.get(i).row : -1; })();
+// plazas (R57): sign-band colours for strip-mall units, and "does this wall face a parking lot?"
+const SHOP_UNIT = [0xd8cdb5, 0xbdbcb6, 0x9a6a4e, 0x6e7073, 0xe6dcc6, 0xb9a78c, 0x8c8f92, 0xcfc3a8];
+const LOTS = M.areas.filter(a => a.t === 'parking' || a.t === 'paved').map(a => { const r = ring(a.p);
+  return { r, x0: Math.min(...r.map(v => v[0])), z0: Math.min(...r.map(v => v[1])), x1: Math.max(...r.map(v => v[0])), z1: Math.max(...r.map(v => v[1])), park: a.t === 'parking' }; });
+function facesLot(p, q, n) {
+  for (const t of [0.25, 0.5, 0.75]) for (const d of [6, 14]) {
+    const x = p[0] + (q[0] - p[0]) * t + n[0] * d, z = p[1] + (q[1] - p[1]) * t + n[2] * d;
+    for (const l of LOTS) if (l.park && x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1 && pointInPoly(x, z, l.r)) return true;
+  }
+  return false;
+}
 function shopSign(front, name, y, bg = '#1d2a36', fg = '#ffffff', h = 0.8) {
   const { p, q, n, L } = front;
   const c = document.createElement('canvas'), g = c.getContext('2d');
@@ -500,6 +511,8 @@ M.buildings.forEach((b, bi) => {
     }
   }
   const gw = rec ? Math.min((front.L - rec.bw) * 0.95, 5.2) : front ? Math.min(front.L * 0.62, 5.2) : 0;
+  const retail = isShop && (['retail', 'commercial', 'supermarket'].includes(b.t) || isBiz);   // R57 plaza looks
+  const shed = isShop && ['industrial', 'warehouse'].includes(b.t), bigBox = retail && area > 1500;
   const segOf = (p, q, L, t0, t1) => [[p[0] + (q[0] - p[0]) * t0 / L, p[1] + (q[1] - p[1]) * t0 / L], [p[0] + (q[0] - p[0]) * t1 / L, p[1] + (q[1] - p[1]) * t1 / L]];
 
   for (let i = 0; i < poly.length; i++) {
@@ -596,9 +609,50 @@ M.buildings.forEach((b, bi) => {
         wallQuad(wallB.siding, p, q, 0, wallH, n, sc, isFront ? 3.2 : 4.2, FLOOR);
       }
     } else if (isShop) {
-      const c = shopCol.clone().multiplyScalar(shade);
-      wallQuad(shopB, p, q, 0, Math.min(wallH, 4.5), n, c, 4, 4.5);
-      if (wallH > 4.5) wallQuad(plainB, p, q, 4.5, wallH, n, c, 0, 0);
+      // plazas and big stores (R57; layout inferred from how Orléans plazas are built, not copied from photos):
+      // shop windows only where the wall faces the street or a parking lot; plain service walls elsewhere
+      const c = shopCol.clone().multiplyScalar(shade), L = Math.hypot(q[0] - p[0], q[1] - p[1]), dir = [(q[0] - p[0]) / L, (q[1] - p[1]) / L];
+      const out = (v, o) => [v[0] + n[0] * o, v[1] + n[2] * o];
+      const shopFace = isFront || (L > 6 && facesLot(p, q, n));
+      if (shed || (retail && !shopFace)) {
+        // insulated-panel service wall with steel doors; warehouses get overhead loading doors
+        wallQuad(plainB, p, q, 0, wallH, n, c.clone().multiplyScalar(0.94), 0, 0);
+        if (L > 9) for (let a = 5, k = 0; a < L - 3; a += 19, k++) {
+          if (shed && k % 2 === 0) wallPanel(garageB, p, dir, n, a, 3.6, 0, Math.min(4.2, wallH - 0.4), new THREE.Color(0xc9ccd0), 0.05, 1);
+          else wallPanel(plainB, p, dir, n, a, 1.0, 0, 2.2, new THREE.Color(0x6d7276), 0.05);
+        }
+      } else if (bigBox) {
+        // big store: solid wall with a darker base, a glass entrance under a canopy, a raised block above it for the name
+        wallQuad(plainB, p, q, 0, wallH, n, c, 0, 0);
+        wallPanel(plainB, p, dir, n, L / 2, L, 0, 1.0, c.clone().multiplyScalar(0.78), 0.03);
+        if (isFront) {
+          const ew = Math.min(16, L * 0.35), at = L / 2, [ga, gb] = segOf(p, q, L, at - ew / 2, at + ew / 2);
+          wallPanel(plainB, p, dir, n, at, ew + 0.8, 0, 4.7, new THREE.Color(0x34373b), 0.05);       // dark frame
+          wallQuad(shopB, out(ga, 0.08), out(gb, 0.08), 0, 4.4, n, new THREE.Color(0xe8eaec), 4, 4.4); // glass doors + windows
+          box(plainB, p[0] + dir[0] * at, p[1] + dir[1] * at, dir, n, ew + 3, 3.2, 4.7, 5.1, c.clone().multiplyScalar(0.85));   // entrance canopy
+          wallPanel(plainB, p, dir, n, at, ew + 6, wallH, wallH + 2.8, c.clone().multiplyScalar(1.08), 0.06);                // raised name block
+          wallPanel(plainB, p, dir, [-n[0], 0, -n[2]], at, ew + 6, wallH, wallH + 2.8, c.clone().multiplyScalar(0.8), 0.3);  // its back
+        }
+      } else if (retail) {
+        // strip mall: one unit every ~7.5 m, each with a glass shop front, its own sign-band colour, pillars between units,
+        // some units with a raised parapet, and a canopy along the walk
+        const units = Math.max(1, Math.round(L / 7.5)), uw = L / units;
+        for (let k = 0; k < units; k++) {
+          const a0 = k * uw, a1 = (k + 1) * uw, [sa, sb] = segOf(p, q, L, a0, a1);
+          const uc = new THREE.Color(SHOP_UNIT[(hsh + k * 7 + i * 3) % SHOP_UNIT.length]).multiplyScalar(shade);
+          wallQuad(shopB, sa, sb, 0, 3.6, n, new THREE.Color(0xe8eaec), 3.75, 3.6);
+          wallQuad(plainB, sa, sb, 3.6, wallH, n, uc, 0, 0);
+          if (units >= 3 && (k + hsh) % 3 === 1) {
+            wallPanel(plainB, p, dir, n, (a0 + a1) / 2, uw, wallH, wallH + 1.5, uc.clone().multiplyScalar(1.05), 0.02);
+            wallPanel(plainB, p, dir, [-n[0], 0, -n[2]], (a0 + a1) / 2, uw, wallH, wallH + 1.5, uc.clone().multiplyScalar(0.8), 0.25);   // its back
+          }
+          if (k < units - 1) box(plainB, p[0] + dir[0] * a1, p[1] + dir[1] * a1, dir, n, 0.55, 0.35, 0, wallH + 0.25, new THREE.Color(0xd9d4c8).multiplyScalar(shade));
+        }
+        box(plainB, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2, dir, n, L, 1.7, 3.6, 3.85, new THREE.Color(0x3d4146));   // canopy
+      } else {
+        wallQuad(shopB, p, q, 0, Math.min(wallH, 4.5), n, c, 4, 4.5);   // offices, public buildings: window band
+        if (wallH > 4.5) wallQuad(plainB, p, q, 4.5, wallH, n, c, 0, 0);
+      }
     } else {
       wallQuad(wallB.siding, p, q, 0, wallH, n, sidingCol.clone().multiplyScalar(shade), 0, FLOOR);
     }
@@ -648,14 +702,15 @@ M.buildings.forEach((b, bi) => {
     if (front) addEntrance(front, 'house', hsh, style, idx);
   } else if (front && style.kind === 'modern') {
     addEntrance(front, 'house', hsh, style, idx);
-  } else if (front && (b.t === 'apartments' || isShop)) {
+  } else if (front && (b.t === 'apartments' || (isShop && !retail))) {   // shops: the glass front has the doors (R57)
     addEntrance(front, isShop ? 'shop' : 'apartments', hsh, style, idx);
   }
   // business name sign over the shop front (names from the map; brand logos are left out on purpose)
   // building name on the front; big stores (over 1,500 m2) get a big sign higher up, above the individual shop signs
   if (front && b.n && (isShop || !isRes)) {
     const big = area > 1500;
-    shopSign(front, b.n, floorY + Math.min(wallH - (big ? 1.2 : 0.6), big ? 6.5 : 4.2), '#1d2a36', '#ffffff', big ? 1.8 : 0.8);
+    // big stores: on the raised block over the entrance; others: in the sign band above the canopy (R57)
+    shopSign(front, b.n, floorY + (big && retail ? wallH + 1.4 : Math.max(4.3, Math.min(wallH - 0.5, 5))), '#1d2a36', '#ffffff', big ? 1.8 : 0.8);
   }
   // each business inside (strip malls): its own sign on the outside wall nearest to it
   if (b.pois && isShop) for (const [px, pz, name] of b.pois) {
@@ -669,7 +724,7 @@ M.buildings.forEach((b, bi) => {
     const half = Math.min(best.L, 7) / 2, c = Math.max(half, Math.min(best.L - half, best.t * best.L)), ux = best.ex / best.L, uz = best.ez / best.L;
     const sp = [best.p[0] + ux * (c - half), best.p[1] + uz * (c - half)], sq = [best.p[0] + ux * (c + half), best.p[1] + uz * (c + half)];
     if (name === b.n) continue;
-    shopSign({ p: sp, q: sq, n: outwardNormal(best.p, best.q, poly), L: half * 2 }, name, floorY + Math.min(wallH - 0.6, 3.4), '#1d2a36', '#ffffff', 0.7);
+    shopSign({ p: sp, q: sq, n: outwardNormal(best.p, best.q, poly), L: half * 2 }, name, floorY + Math.max(4.3, Math.min(wallH - 0.5, 5)), '#1d2a36', '#ffffff', 0.7);
   }
   if (front && style.kind === 'apt' && b.a) shopSign(front, b.a, floorY + 4.1, '#f4f4f2', '#1d2a36');   // street number over the lobby
 
