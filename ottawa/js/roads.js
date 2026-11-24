@@ -105,6 +105,7 @@ function paintLine(r, x1, z1, x2, z2, y, offset, width, color, dash, gap) {
   }
 }
 
+(window.__loadT = window.__loadT || []).push(['roads:pass1', Math.round(performance.now())]);   // section timing (?debug)
 // pass 2: geometry
 const jkey = p => Math.round(p[0] * 4) + ',' + Math.round(p[1] * 4), jointUse = new Map();   // how many roads use each point
 for (const r of M.roads) for (const p of r.p) jointUse.set(jkey(p), (jointUse.get(jkey(p)) || 0) + 1);
@@ -199,12 +200,96 @@ for (const r of M.roads) {
     }
   }
 }
+(window.__loadT = window.__loadT || []).push(['roads:pass2', Math.round(performance.now())]);   // section timing (?debug)
+// R61 loop round 2: rounded corners where curbed streets meet. Between each pair of neighbouring arms of a junction
+// (25-155 degrees apart) the asphalt gets a curved fillet and the curb follows the arc; the straight curb pieces that
+// stuck into that corner are dropped. Radius 6 m on local streets, 9 m when both streets are arterials.
+// INFERRED: typical City of Ottawa corner radii; not measured per corner.
+const cornerAt = []; let cornerFillets = 0; window.__corners = () => [cornerFillets, cornerAt];   // for testing
+{
+  const arms = new Map();   // junction key -> { p, arms: [{ dx, dz, hw, t, y }] }
+  const curbUse = new Map();   // like jointUse, but counting only curbed streets (footpaths and crosswalks don't make a corner)
+  for (const r of M.roads) if (CURBED.has(r.t)) for (const p of r.p) curbUse.set(jkey(p), (curbUse.get(jkey(p)) || 0) + 1);
+  for (const r of M.roads) {
+    if (!CURBED.has(r.t)) continue;
+    r.p.forEach((p, i) => {
+      const k = jkey(p); if ((curbUse.get(k) || 0) < 2) return;
+      if (!arms.has(k)) arms.set(k, { p, arms: [] });
+      for (const j of [i - 1, i + 1]) {
+        if (!r.p[j]) continue;
+        // direction from a point at least 3 m along (map points can be only ~0.4 m apart near junctions)
+        let q = r.p[j]; for (let n = j; r.p[n]; n += j - i) { q = r.p[n]; if (Math.hypot(q[0] - p[0], q[1] - p[1]) >= 3) break; }
+        const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz); if (L < 1) continue;
+        // usable length: along the street up to the next junction or the street's end
+        let len = 0; for (let m = i, n = j; r.p[n]; m = n, n += j - i) { len += Math.hypot(r.p[n][0] - r.p[m][0], r.p[n][1] - r.p[m][1]); if ((curbUse.get(jkey(r.p[n])) || 0) >= 2) break; }
+        arms.get(k).arms.push({ dx: dx / L, dz: dz / L, hw: r.w / 2, t: r.t, y: ROAD_Y[r.t] ?? 0.12, len });
+      }
+    });
+  }
+  const asph = new THREE.Color(0x55575a), cut = [];
+  for (const { p, arms: A } of arms.values()) {
+    if (A.length < 3) continue;   // a plain bend or a road split into two map pieces: no corner
+    A.forEach(a => a.ang = Math.atan2(a.dz, a.dx)); A.sort((a, b) => a.ang - b.ang);
+    for (let i = 0; i < A.length; i++) {
+      const a = A[i], b = A[(i + 1) % A.length];
+      let th = b.ang - a.ang; if (th <= 0) th += Math.PI * 2;
+      if (th < 25 * Math.PI / 180 || th > 155 * Math.PI / 180) continue;
+      const R = ARTERIAL.has(a.t) && ARTERIAL.has(b.t) ? 9 : 6, sn = Math.sin(th);
+      const L = (x, y) => [p[0] + a.dx * x + b.dx * y, p[1] + a.dz * x + b.dz * y];   // skew coordinates along the two arms
+      const E = L(b.hw / sn, a.hw / sn), C = L((b.hw + R) / sn, (a.hw + R) / sn);
+      // tangent points: the foot of C on each road edge
+      const foot = (u, h, sgn) => { const t = (C[0] - p[0]) * u.dx + (C[1] - p[1]) * u.dz; return [p[0] + u.dx * t - sgn * u.dz * h, p[1] + u.dz * t + sgn * u.dx * h, t]; };
+      const tA = foot(a, a.hw, 1), tB = foot(b, b.hw, -1);
+      if (tA[2] > a.len * 0.45 || tB[2] > b.len * 0.45) continue;   // short arm: the corner would reach the next junction
+      const a0 = Math.atan2(tA[1] - C[1], tA[0] - C[0]); let a1 = Math.atan2(tB[1] - C[1], tB[0] - C[0]);
+      let sweep = a1 - a0; if (sweep > Math.PI) sweep -= Math.PI * 2; if (sweep < -Math.PI) sweep += Math.PI * 2;
+      const N = 8, arc = [];
+      for (let k = 0; k <= N; k++) { const g = a0 + sweep * k / N; arc.push([C[0] + Math.cos(g) * R, C[1] + Math.sin(g) * R]); }
+      const y = Math.min(a.y, b.y);
+      for (let k = 0; k < N; k++) {   // asphalt fillet: fan from the sharp corner E over the arc
+        const P1 = [E[0], y, E[1]], P2 = [arc[k][0], y, arc[k][1]], P3 = [arc[k + 1][0], y, arc[k + 1][1]];
+        pushTri(roadB, P1, P2, P3, [0, 1, 0], asph, [P1[0] / 8, P1[2] / 8], [P2[0] / 8, P2[2] / 8], [P3[0] / 8, P3[2] / 8]);
+      }
+      for (let k = 0; k < N; k++) {   // curb along the arc, as chord pieces facing the corner (the sidewalk side)
+        const q1 = arc[k], q2 = arc[k + 1], dx = q2[0] - q1[0], dz = q2[1] - q1[1], len = Math.hypot(dx, dz) || 1;
+        const mx = (q1[0] + q2[0]) / 2, mz = (q1[1] + q2[1]) / 2, ox = C[0] - mx, oz = C[1] - mz, ol = Math.hypot(ox, oz) || 1;
+        const hw = 1;   // the piece sits at offset hw from its base line
+        curbPieces.push({ x1: q1[0] - ox / ol * hw, z1: q1[1] - oz / ol * hw, ux: dx / len, uz: dz / len, px: ox / ol, pz: oz / ol, s: 0, e: len, hw, y, t: a.t, corner: true });
+      }
+      // the corner triangle tA-E-tB, grown 15% about its middle so pieces lying on its edges count as inside
+      const gx = (tA[0] + E[0] + tB[0]) / 3, gz = (tA[1] + E[1] + tB[1]) / 3;
+      cut.push([tA, E, tB].map(v => [gx + (v[0] - gx) * 1.15, gz + (v[1] - gz) * 1.15]));
+      cornerFillets++; cornerAt.push(E);
+    }
+  }
+  // drop straight curb pieces whose middle lies in a corner that is now rounded (between the tangent points and E)
+  const cell = new Map(), ck = (x, z) => Math.floor(x / 20) + ',' + Math.floor(z / 20);   // corners bucketed in 20 m cells
+  for (const tri of cut) {
+    const xs = tri.map(v => v[0]), zs = tri.map(v => v[1]);
+    for (let gx = Math.floor(Math.min(...xs) / 20); gx <= Math.floor(Math.max(...xs) / 20); gx++)
+      for (let gz = Math.floor(Math.min(...zs) / 20); gz <= Math.floor(Math.max(...zs) / 20); gz++) {
+        const k = gx + ',' + gz; if (!cell.has(k)) cell.set(k, []); cell.get(k).push(tri);
+      }
+  }
+  const keep = [];
+  for (const c of curbPieces) {
+    if (!c.corner) {
+      const m = (c.s + c.e) / 2, x = c.x1 + c.ux * m + c.px * c.hw, z = c.z1 + c.uz * m + c.pz * c.hw;
+      const near = cell.get(ck(x, z)); if (near && near.some(tri => pointInPoly(x, z, tri))) continue;
+    }
+    keep.push(c);
+  }
+  curbPieces.length = 0; for (const c of keep) curbPieces.push(c);
+}
+(window.__loadT = window.__loadT || []).push(['roads:corners', Math.round(performance.now())]);   // section timing (?debug)
 finish(roadB, new THREE.MeshLambertMaterial({ vertexColors: true, map: texAsphalt, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 }), { drape: true });
 finish(walkB, new THREE.MeshLambertMaterial({ vertexColors: true, map: texConcrete, polygonOffset: true, polygonOffsetFactor: -1.5, polygonOffsetUnits: -6 }), { drape: true });
 finish(lineB, flatMat(3), { drape: true });
 // curb + gutter: concrete gutter pan on the road edge, barrier curb behind it, dropped where a driveway crosses
 function buildCurbs() {
   const gutter = new THREE.Color(0xb9b7b0);
+  // shades made once (R61 speed), not one new colour per triangle
+  const c92 = curbCol.clone().multiplyScalar(0.92), c85 = curbCol.clone().multiplyScalar(0.85), c80 = curbCol.clone().multiplyScalar(0.8);
   // driveways bucketed in 16 m cells, so each curb piece only checks the few driveways next to it
   const dw = new Map(), key = (i, j) => i + ',' + j;
   for (const q of drivewayQuads) {
@@ -232,20 +317,20 @@ function buildCurbs() {
       // new residential streets have a low rounded "roll-over" curb (seen on Street View): a gentle slope up, no gutter pan
       const top = dropped ? y + 0.03 : 0.24, slope = 0.35, wC = 0.2;
       const sn = [-px * 0.4, 0.92, -pz * 0.4];
-      pushTri(curbB, P(s, hw - slope, y + 0.002), P(e, hw - slope, y + 0.002), P(e, hw, top), sn, curbCol.clone().multiplyScalar(0.92));
-      pushTri(curbB, P(s, hw - slope, y + 0.002), P(e, hw, top), P(s, hw, top), sn, curbCol.clone().multiplyScalar(0.92));
+      pushTri(curbB, P(s, hw - slope, y + 0.002), P(e, hw - slope, y + 0.002), P(e, hw, top), sn, c92);
+      pushTri(curbB, P(s, hw - slope, y + 0.002), P(e, hw, top), P(s, hw, top), sn, c92);
       quadUp(curbB, P(s, hw, top), P(e, hw, top), P(e, hw + wC, top), P(s, hw + wC, top), curbCol, UV0, UV0, UV0, UV0);
-      pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, top), P(e, hw + wC, 0), outward, curbCol.clone().multiplyScalar(0.8));
-      pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, 0), P(s, hw + wC, 0), outward, curbCol.clone().multiplyScalar(0.8));
+      pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, top), P(e, hw + wC, 0), outward, c80);
+      pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, 0), P(s, hw + wC, 0), outward, c80);
       continue;
     }
     const top = dropped ? y + 0.04 : 0.3, wC = 0.25, gw = 0.4;
     quadUp(curbB, P(s, hw - gw, y + 0.004), P(e, hw - gw, y + 0.004), P(e, hw, y + 0.004), P(s, hw, y + 0.004), gutter, UV0, UV0, UV0, UV0);
-    pushTri(curbB, P(s, hw, y), P(e, hw, y), P(e, hw, top), inward, curbCol.clone().multiplyScalar(0.85));
-    pushTri(curbB, P(s, hw, y), P(e, hw, top), P(s, hw, top), inward, curbCol.clone().multiplyScalar(0.85));
+    pushTri(curbB, P(s, hw, y), P(e, hw, y), P(e, hw, top), inward, c85);
+    pushTri(curbB, P(s, hw, y), P(e, hw, top), P(s, hw, top), inward, c85);
     quadUp(curbB, P(s, hw, top), P(e, hw, top), P(e, hw + wC, top), P(s, hw + wC, top), curbCol, UV0, UV0, UV0, UV0);
-    pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, top), P(e, hw + wC, 0), outward, curbCol.clone().multiplyScalar(0.8));
-    pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, 0), P(s, hw + wC, 0), outward, curbCol.clone().multiplyScalar(0.8));
+    pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, top), P(e, hw + wC, 0), outward, c80);
+    pushTri(curbB, P(s, hw + wC, top), P(e, hw + wC, 0), P(s, hw + wC, 0), outward, c80);
   }
   finish(curbB, new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2.5, polygonOffsetUnits: -10 }), { drape: true, cast: true });
 }

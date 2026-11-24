@@ -24,6 +24,7 @@ window.LOADING = (function () {
     ['Planting the trees…', 3],                     // js/trees.js
     ['Parking your car in the driveway…', 1],       // js/car.js
     ['Turning the key…', 8],                        // js/game.js
+    ['Warming up the engine…', 1],                  // js/sound.js
   ];
   const total = STEPS.reduce((s, x) => s + x[1], 0);
   const $ = id => document.getElementById(id);

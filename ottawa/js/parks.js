@@ -65,15 +65,17 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
   const parks = M.areas.filter(a => a.t === 'park');
   const inPark = (x, z) => parks.some(a => pointInPoly(x, z, ring(a.p)));
   const plays = [], extraBlocked = [];
-  let splash = null, court = null, field = null, rink = null;
+  let splash = null, rink = null; const courts = [], fields = [], tennis = [], volley = [];   // R61: every park, not only Ouellette
   for (const a of M.areas) {
     const poly = ring(a.p); if (poly.length < 3) continue;
     const [cx, cz] = centroid(poly);
     if (!inPark(cx, cz)) continue;
     if (a.t === 'play' && a.k === 'splash_pad') splash = { poly, cx, cz };
-    else if (a.t === 'play') plays.push({ poly, cx, cz, area: Math.abs(signedArea(poly)) });
-    else if (a.t === 'pitch' && a.sp === 'basketball') court = { poly, b: obox(poly), hoops: +a.hoops || 1 };
-    else if (a.t === 'pitch' && a.sp === 'soccer') field = { poly, b: obox(poly) };
+    else if (a.t === 'play') plays.push({ poly, cx, cz, area: Math.abs(signedArea(poly)), park: parks.findIndex(pk => pointInPoly(cx, cz, ring(pk.p))) });
+    else if (a.t === 'pitch' && a.sp === 'basketball') courts.push({ poly, b: obox(poly), hoops: +a.hoops || 1 });
+    else if (a.t === 'pitch' && a.sp === 'soccer') fields.push({ poly, b: obox(poly) });
+    else if (a.t === 'pitch' && a.sp === 'tennis') tennis.push({ poly, b: obox(poly) });
+    else if (a.t === 'pitch' && a.sp === 'volleyball') volley.push({ poly, b: obox(poly), sand: a.k === 'sand' || !a.k });
     else if (a.t === 'ice') rink = { poly, b: obox(poly), lit: a.lit };
   }
 
@@ -189,8 +191,11 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
   };
   // which equipment goes where: biggest area = senior structure, next = junior, then swings, then riders
   // (matches the aerial view: blue slides in the two central lobes, an A-frame in the west lobe)
+  // ranked within each park (R61), so every park gets its own big structure
+  const rankIn = new Map();
   const byArea = plays.slice().sort((a, b) => b.area - a.area);
-  byArea.forEach((p, i) => {
+  byArea.forEach(p => { const i = rankIn.get(p.park) || 0; rankIn.set(p.park, i + 1); p.rank = i; });
+  byArea.forEach(p => { const i = p.rank;
     if (p.area < 80) spinner(p);
     else if (i === 0) bigStructure(p);
     else if (i === 1) juniorStructure(p);
@@ -236,7 +241,7 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
   }
 
   // ---------- basketball court: asphalt, half-court lines, one hoop (OSM: hoops=1) ----------
-  if (court) {
+  for (const court of courts) {
     const b = court.b, F = frame(b), hl = b.L / 2, hw = b.W / 2;
     addFlatPoly(surfB, court.poly, 0.08, new THREE.Color(0x505357));
     extraBlocked.push(court.poly);
@@ -262,7 +267,7 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
   }
 
   // ---------- mini soccer field: 55 x 38 m (OSM), white lines on the grass, small goals, players' benches ----------
-  if (field) {
+  for (const field of fields) {
     const b = field.b, F = frame(b), hl = Math.min(55, b.L) / 2, hw = Math.min(38, b.W) / 2, w = 0.1, y = 0.075;
     const c = [F(-hl, -hw), F(hl, -hw), F(hl, hw), F(-hl, hw)];
     for (let i = 0; i < 4; i++) line(lineB2, c[i], c[(i + 1) % 4], w, y);
@@ -298,6 +303,56 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
     const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.06, 10), mat(COL.black)); lid.position.y = 0.98; g.add(lid);
     put(g, x, z, 0, [[0, 0, 0.32]], true);
   }
+
+  // ---------- tennis courts (OSM sport=tennis, R61): green surface, white lines, net, 3 m chain-link fence ----------
+  // INFERRED: colours and fence height (typical City of Ottawa public courts). Court size follows the mapped outline.
+  for (const t of tennis) {
+    const b = t.b, F = frame(b), hl = b.L / 2, hw = b.W / 2;
+    addFlatPoly(surfB, t.poly, 0.08, new THREE.Color(0x4f7a5a));
+    extraBlocked.push(t.poly);
+    const nCourts = Math.max(1, Math.round(b.W / 17)), cw = b.W / nCourts, yL = 0.095, w = 0.06;
+    for (let k = 0; k < nCourts; k++) {
+      const v0 = -hw + k * cw, vc = v0 + cw / 2, L2 = Math.min(11.9, hl - 2), W2 = Math.min(5.5, cw / 2 - 1), S = Math.min(4.1, W2 * 0.75);
+      const c = [F(-L2, vc - W2), F(L2, vc - W2), F(L2, vc + W2), F(-L2, vc + W2)];
+      for (let i = 0; i < 4; i++) line(lineB2, c[i], c[(i + 1) % 4], w, yL);
+      for (const sv of [-S, S]) line(lineB2, F(-L2, vc + sv), F(L2, vc + sv), w, yL);
+      for (const su of [-6.4, 6.4]) line(lineB2, F(su, vc - S), F(su, vc + S), w, yL);
+      line(lineB2, F(-6.4, vc), F(6.4, vc), w, yL);
+      const g = new THREE.Group();   // the net across the middle
+      for (const sv of [-W2 - 0.9, W2 + 0.9]) rod(g, [0, 0, sv], [0, 1.07, sv], 0.04, COL.black);
+      bx(g, 0.02, 0.9, (W2 + 0.9) * 2, 0, 0.5, 0, 0x222426).material = mat(0x222426, { transparent: true, opacity: 0.55 });
+      bx(g, 0.04, 0.06, (W2 + 0.9) * 2, 0, 0.94, 0, COL.white);
+      const np = F(0, vc); put(g, np[0], np[1], yawX(b), [[0, -W2 - 0.9, 0.1], [0, W2 + 0.9, 0.1]]);
+    }
+    // chain-link fence on the outline: posts every 3 m, see-through mesh, solid for the car
+    const fg = new THREE.Group(); fg.position.set(0, 0, 0); scene.add(fg);
+    const P = t.poly;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], c = P[(i + 1) % P.length], L = Math.hypot(c[0] - a[0], c[1] - a[1]); if (L < 0.5) continue;
+      const y0 = heightAt((a[0] + c[0]) / 2, (a[1] + c[1]) / 2);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(L, 3), mat(0x8a8f94, { transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+      m.position.set((a[0] + c[0]) / 2, y0 + 1.5, (a[1] + c[1]) / 2); m.rotation.y = -Math.atan2(c[1] - a[1], c[0] - a[0]); fg.add(m);
+      const n = Math.max(1, Math.round(L / 3));
+      for (let k = 0; k <= n; k++) {
+        const x = a[0] + (c[0] - a[0]) * k / n, z = a[1] + (c[1] - a[1]) * k / n;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.1, 6), mat(0x8a8f94)); post.position.set(x, heightAt(x, z) + 1.55, z); fg.add(post);
+      }
+      gridAdd({ kind: 'wall', x1: a[0], z1: a[1], x2: c[0], z2: c[1] }, Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[0], c[0]), Math.max(a[1], c[1]));
+    }
+  }
+  // ---------- volleyball (OSM sport=volleyball, R61 r13): sand court with a rope boundary and a net on two posts ----------
+  // INFERRED: sand surface (City of Ottawa park courts are usually sand), net height 2.43 m.
+  for (const v of volley) {
+    const b = v.b, F = frame(b), hl = b.L / 2;
+    addFlatPoly(surfB, v.poly, 0.08, new THREE.Color(0xd9c79a));
+    extraBlocked.push(v.poly);
+    const g = new THREE.Group(), half = Math.min(4.5, b.W / 2 - 0.3) + 0.6;
+    for (const s2 of [-half, half]) rod(g, [0, 0, s2], [0, 2.55, s2], 0.05, COL.post);
+    bx(g, 0.02, 1.0, half * 2, 0, 1.93, 0, 0x222426).material = mat(0x222426, { transparent: true, opacity: 0.5 });
+    bx(g, 0.04, 0.07, half * 2, 0, 2.43, 0, COL.white);
+    const np = F(0, 0); put(g, np[0], np[1], yawX(b), [[0, -half, 0.1], [0, half, 0.1]]);
+  }
+  window.__parks = { volley: volley.length, parks: parks.length, plays: plays.length, courts: courts.length, fields: fields.length, tennis: tennis.length };   // for testing
 
   // ---------- rink: grass in summer; the light poles are permanent (OSM ice_rink:lights=permanent) ----------
   if (rink && rink.lit) {
@@ -335,12 +390,16 @@ const parkSpray = [];   // splash-pad water jets, animated by updateParks()
     }
   }
 
+  const parkSigns = []; window.__parkSigns = parkSigns;   // for testing
   // ---------- park sign at the Strasbourg Street parking entrance (bilingual, design inferred, no logo) ----------
   for (const pk of parks) {
     const lot = M.areas.find(a => a.t === 'parking' && (() => { const [x, z] = centroid(ring(a.p)); return pointInPoly(x, z, ring(pk.p)) || Math.hypot(x - centroid(ring(pk.p))[0], z - centroid(ring(pk.p))[1]) < 120; })());
     let best = null;
     if (lot) for (const v of ring(lot.p)) { const r = nearestRoadPoint(v[0], v[1]); if (r && (!best || r.d < best.d)) best = { v, r, d: r.d }; }
+    // R61 r12: a park without a parking lot gets its sign on its edge nearest a street (most park frontages)
+    if (!best) for (const v of ring(pk.p)) { const r = nearestRoadPoint(v[0], v[1]); if (r && r.d < 40 && (!best || r.d < best.d)) best = { v, r, d: r.d }; }
     if (!best || !pk.n) continue;
+    parkSigns.push(pk.n);
     const { v, r } = best, dx = r.x - v[0], dz = r.z - v[1], l = Math.hypot(dx, dz) || 1;
     // step 5 m sideways along the street so the sign sits on the lawn beside the lot entrance
     let sx = v[0] - dz / l * 5 + dx / l * 0.5, sz = v[1] + dx / l * 5 + dz / l * 0.5;

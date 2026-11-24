@@ -454,7 +454,9 @@ const cullList = [];
   const skip = new Set([car, walker, skyDome]);
   if (window.Interior && Interior.debug && Interior.debug.group) skip.add(Interior.debug.group());
   for (const o of scene.children) {
-    if (skip.has(o) || o.isLight || o.isInstancedMesh || o.isSprite) continue;
+    // streamed layers (finish(..., {drape})) show / hide per 200 m square themselves; treating one as a small prop hid the
+    // whole layer whenever you were far from its few triangles near home (R61: drive-throughs vanished)
+    if (skip.has(o) || o.isLight || o.isInstancedMesh || o.isSprite || o.userData.streamed) continue;
     box.setFromObject(o); if (box.isEmpty()) continue;
     box.getBoundingSphere(sph); if (sph.radius > 20) continue;
     cullList.push({ o, x: sph.center.x, z: sph.center.z });

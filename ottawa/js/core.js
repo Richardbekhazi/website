@@ -152,7 +152,10 @@ function pushTri(B, a, b, c, n, color, ta = UV0, tb = UV0, tc = UV0) {
   const ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2], vx = c[0]-a[0], vy = c[1]-a[1], vz = c[2]-a[2];
   const gx = uy*vz-uz*vy, gy = uz*vx-ux*vz, gz = ux*vy-uy*vx;
   if (gx*n[0] + gy*n[1] + gz*n[2] < 0) { let t = b; b = c; c = t; t = tb; tb = tc; tc = t; }
-  for (const p of [a, b, c]) { B.pos.push(p[0], p[1] + B.lift, p[2]); B.nor.push(n[0], n[1], n[2]); B.col.push(color.r, color.g, color.b); }
+  const L = B.lift;   // unrolled (R61 speed): no small array per call
+  B.pos.push(a[0], a[1] + L, a[2], b[0], b[1] + L, b[2], c[0], c[1] + L, c[2]);
+  B.nor.push(n[0], n[1], n[2], n[0], n[1], n[2], n[0], n[1], n[2]);
+  B.col.push(color.r, color.g, color.b, color.r, color.g, color.b, color.r, color.g, color.b);
   B.uv.push(ta[0], ta[1], tb[0], tb[1], tc[0], tc[1]);
 }
 // ---------- load when near (R54) ----------
@@ -160,21 +163,26 @@ function pushTri(B, a, b, c, n, color, ta = UV0, tb = UV0, tc = UV0) {
 // of draping it all at start, finish(..., {drape}) sorts its triangles into 200 m squares and each square is draped only
 // when you come near it (a few squares per frame while you drive). Far squares are hidden. Nothing else changes: the
 // game data, collisions and buildings are still complete from the start.
-const CHUNK = 200, CHUNK_BUILD = 700, CHUNK_SHOW = 1000;   // square size, build radius, draw radius (fog ends ~900 m)
+const CHUNK = 200, CHUNK_BUILD = 700, CHUNK_SHOW = 1000, CHUNK_DROP = 1500;   // + unload radius (R61 r11)   // square size, build radius, draw radius (fog ends ~900 m)
 const chunks = new Map();   // "i,j" -> { i, j, jobs: [{ B, mat, opts, group }], meshes: [], built }
 function streamFinish(B, mat, opts) {
-  const group = new THREE.Group(); scene.add(group);
-  const buckets = new Map();
-  for (let t = 0, u = 0; t < B.pos.length; t += 9, u += 6) {
+  const group = new THREE.Group(); group.userData.streamed = true; scene.add(group);   // (game.js never culls these as props)
+  // R61 speed: count the triangles of each square first, then copy straight into fixed-size arrays
+  const nT = B.pos.length / 9, keyOf = new Array(nT), count = new Map();
+  for (let t = 0, q = 0; q < nT; t += 9, q++) {
     const cx = (B.pos[t] + B.pos[t + 3] + B.pos[t + 6]) / 3, cz = (B.pos[t + 2] + B.pos[t + 5] + B.pos[t + 8]) / 3;
     const i = Math.floor(cx / CHUNK), j = Math.floor(cz / CHUNK), k = i + ',' + j;
-    let sub = buckets.get(k);
-    if (!sub) { sub = makeBuilder(); buckets.set(k, sub); if (!chunks.has(k)) chunks.set(k, { i, j, jobs: [], meshes: [], built: false }); }
-    for (let q = 0; q < 9; q++) { sub.pos.push(B.pos[t + q]); sub.nor.push(B.nor[t + q]); sub.col.push(B.col[t + q]); }
-    for (let q = 0; q < 6; q++) sub.uv.push(B.uv[u + q]);
+    keyOf[q] = k; count.set(k, (count.get(k) || 0) + 1);
+    if (!chunks.has(k)) chunks.set(k, { i, j, jobs: [], meshes: [], built: false });
+  }
+  const buckets = new Map();
+  for (const [k, n] of count) buckets.set(k, { pos: new Float32Array(n * 9), nor: new Float32Array(n * 9), col: new Float32Array(n * 9), uv: new Float32Array(n * 6), lift: 0, f: 0 });
+  for (let t = 0, u = 0, q = 0; q < nT; t += 9, u += 6, q++) {
+    const sub = buckets.get(keyOf[q]), o = sub.f * 9, o2 = sub.f * 6; sub.f++;
+    for (let z = 0; z < 9; z++) { sub.pos[o + z] = B.pos[t + z]; sub.nor[o + z] = B.nor[t + z]; sub.col[o + z] = B.col[t + z]; }
+    for (let z = 0; z < 6; z++) sub.uv[o2 + z] = B.uv[u + z] || 0;
   }
   for (const [k, sub] of buckets) {
-    for (const a of ['pos', 'nor', 'col', 'uv']) sub[a] = new Float32Array(sub[a]);   // compact storage until the square is built
     const job = { B: sub, mat, opts, group }, ch = chunks.get(k);
     if (ch.built) buildJob(ch, job); else ch.jobs.push(job);
   }
@@ -182,9 +190,18 @@ function streamFinish(B, mat, opts) {
 }
 function buildJob(ch, job) {
   const m = finish(job.B, job.mat, { ...job.opts, drape: true, now: true, parent: job.group });
-  m.renderOrder = job.group.renderOrder; ch.meshes.push(m); job.B = null;
+  m.renderOrder = job.group.renderOrder; ch.meshes.push(m);
+  (ch.done || (ch.done = [])).push(job);   // keep the compact source so the square can be unloaded and rebuilt later
+}
+// R61 r11: squares farther than CHUNK_DROP are unloaded (their draped meshes freed from memory and the graphics card) and
+// rebuilt from the kept source when you come back within CHUNK_BUILD
+let chunksDropped = 0;
+function dropChunk(ch) {
+  for (const m of ch.meshes) { m.parent && m.parent.remove(m); m.geometry.dispose(); }
+  ch.meshes = []; ch.jobs = ch.done || []; ch.done = []; ch.built = false; chunksDropped++;
 }
 let chunkScanT = 0;
+window.__chunks = () => { let built = 0, tris = 0; for (const ch of chunks.values()) if (ch.built) { built++; for (const m of ch.meshes) tris += m.geometry.attributes.position.count / 3; } return { squares: chunks.size, built, tris: Math.round(tris), dropped: chunksDropped }; };   // for testing
 // build the nearest unbuilt squares within CHUNK_BUILD of (x, z) until budgetMs is used up; radius overrides the
 // build radius (used at start and after a big-map jump, with an unlimited budget, so you never see an empty street)
 function updateChunks(x, z, budgetMs = 6, radius = CHUNK_BUILD) {
@@ -201,7 +218,9 @@ function updateChunks(x, z, budgetMs = 6, radius = CHUNK_BUILD) {
   }
   if (performance.now() < chunkScanT) return; chunkScanT = performance.now() + 300;   // show / hide squares 3x a second
   for (const ch of chunks.values()) if (ch.built) {
-    const vis = Math.hypot((ch.i + 0.5) * CHUNK - x, (ch.j + 0.5) * CHUNK - z) < CHUNK_SHOW;
+    const d = Math.hypot((ch.i + 0.5) * CHUNK - x, (ch.j + 0.5) * CHUNK - z);
+    if (d > CHUNK_DROP) { dropChunk(ch); continue; }
+    const vis = d < CHUNK_SHOW;
     for (const m of ch.meshes) m.visible = vis;
   }
 }
@@ -243,16 +262,21 @@ function hashStr(s) { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.ch
 // spatial grid for collisions and placement checks
 const CELL = 16;
 const grid = new Map();
-function gkey(i, j) { return i + ',' + j; }
+function gkey(i, j) { return (i + 32768) * 65536 + (j + 32768); }   // a number, not a string (R61 speed)
 function gridAdd(item, minx, minz, maxx, maxz) {
   for (let i = Math.floor(minx / CELL); i <= Math.floor(maxx / CELL); i++)
     for (let j = Math.floor(minz / CELL); j <= Math.floor(maxz / CELL); j++) {
       const k = gkey(i, j); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(item);
     }
 }
+// R61 speed: a plain array and a visit stamp instead of a new Set per call (called hundreds of thousands of times while
+// the world is built); same items, each once
+let gridStamp = 0;
 function gridNear(x, z) {
-  const out = new Set(), i0 = Math.floor(x / CELL), j0 = Math.floor(z / CELL);
-  for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) { const l = grid.get(gkey(i, j)); if (l) for (const it of l) out.add(it); }
+  const out = [], st = ++gridStamp, i0 = Math.floor(x / CELL), j0 = Math.floor(z / CELL);
+  for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) {
+    const l = grid.get(gkey(i, j)); if (l) for (const it of l) if (it._gs !== st) { it._gs = st; out.push(it); }
+  }
   return out;
 }
 

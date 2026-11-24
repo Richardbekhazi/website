@@ -5,6 +5,7 @@
 
 // ---------- street furniture (real positions mapped in OpenStreetMap) ----------
 buildCurbs();
+(window.__loadT = window.__loadT || []).push(['furn:curbs', Math.round(performance.now())]);   // section timing (?debug)
 const signalMats = { A: {}, B: {} };
 {
   const F = M.furniture || { lamps: [], stops: [], signals: [], mail: [], bus: [], cabinets: [] };
@@ -60,11 +61,45 @@ const signalMats = { A: {}, B: {} };
     [lGlassG, new THREE.MeshLambertMaterial({ color: 0xf3ead2, emissive: 0x5a5140 })]]);
   window.__lamps = { led: spots.length, lantern: lanterns.length, lanternAt: lanterns.slice(0, 5) };   // for testing
 
+  (window.__loadT = window.__loadT || []).push(['furn:lights', Math.round(performance.now())]);   // section timing (?debug)
   // painted stop bars (white, 45 cm) across the approach lane
   const barB = makeBuilder(), white = new THREE.Color(0xf4f4f0);
-  const stopBar = (x, z, dx, dz, w) => {
-    const rx = -dz, rz = dx, a = 0.15, b = w / 2 - 0.45, t = 0.45;
+  const stopBar = (x, z, dx, dz, w, ow) => {   // ow: one-way carriageway, the bar spans the whole width
+    const rx = -dz, rz = dx, a = ow ? -w / 2 + 0.45 : 0.15, b = w / 2 - 0.45, t = 0.45;
     quadUp(barB, [x + rx * a, 0.135, z + rz * a], [x + rx * b, 0.135, z + rz * b], [x + rx * b + dx * t, 0.135, z + rz * b + dz * t], [x + rx * a + dx * t, 0.135, z + rz * a + dz * t], white, UV0, UV0, UV0, UV0);
+  };
+
+  // R61 loop 2 round 3: white lane arrows before each traffic light, 6 m and 30 m back from the stop line, one per lane
+  // on the approach half of the road (lane count from the width, ~3.5 m lanes). With 2+ lanes: left lane turns left,
+  // right lane goes straight or right, others straight; one lane: straight-left-right is left unpainted (as usual).
+  // INFERRED: which turns each lane allows (OSM turn:lanes is not in the data); check intersection by intersection.
+  let arrowCount = 0, oneWayApproaches = 0;
+  const arrow = (cx, cz, fx, fz, kind) => {   // kind: 's' straight, 'l' left, 'sr' straight + right
+    const rx = -fz, rz = fx, P = (r, f) => [cx + rx * r + fx * f, 0.137, cz + rz * r + fz * f];
+    const quad = (r0, f0, r1, f1) => quadUp(barB, P(r0, f0), P(r1, f0), P(r1, f1), P(r0, f1), white, UV0, UV0, UV0, UV0);
+    const tri = (a, b, c) => pushTri(barB, P(...a), P(...b), P(...c), [0, 1, 0], white);
+    if (kind === 's' || kind === 'sr') { quad(-0.08, -2.6, 0.08, 0.6); tri([-0.45, 0.6], [0.45, 0.6], [0, 1.9]); }
+    if (kind === 'sr') { quad(0.08, -0.6, 0.75, -0.45); tri([0.75, -0.95], [0.75, -0.1], [1.25, -0.52]); }
+    if (kind === 'l') { quad(-0.08, -2.6, 0.08, -0.2); quad(-0.8, -0.35, 0.08, -0.2); tri([-0.8, -0.75], [-0.8, 0.2], [-1.35, -0.27]); }
+    arrowCount++;
+  };
+  // is this approach on a one-way carriageway (a divided road's half)? then the whole width is the approach (R61 r10)
+  const oneWayAt = (x, z, dx, dz) => {
+    const px = x - dx * 8, pz = z - dz * 8; let best = null, bd = 1e9;
+    for (const it of gridNear(px, pz)) {
+      if (it.kind !== 'road') continue; const sg = it.seg, ex = sg.x2 - sg.x1, ez = sg.z2 - sg.z1, L2 = ex * ex + ez * ez || 1;
+      const t = Math.max(0, Math.min(1, ((px - sg.x1) * ex + (pz - sg.z1) * ez) / L2)), d = Math.hypot(px - sg.x1 - t * ex, pz - sg.z1 - t * ez);
+      if (d < bd) { bd = d; best = sg; }
+    }
+    return !!(best && best.road && best.road.ow && bd < best.w / 2 + 1);
+  };
+  const laneArrows = (x, z, dx, dz, w, ow) => {
+    const half = ow ? w : w / 2, lanes = Math.max(1, Math.round(half / 3.5)), lw = half / lanes, o0 = ow ? -w / 2 : 0;
+    if (lanes < 2) return;
+    for (let k = 0; k < lanes; k++) {
+      const o = o0 + lw * (k + 0.5), kind = k === 0 ? 'l' : k === lanes - 1 ? 'sr' : 's';
+      for (const back of [6, 30]) arrow(x - dx * back - dz * o, z - dz * back + dx * o, dx, dz, kind);
+    }
   };
 
   // stop signs: red octagon, plus the Ontario "ALL-WAY" tab at all-way stops
@@ -167,12 +202,14 @@ const signalMats = { A: {}, B: {} };
     window.__nameSigns = { onStopPosts: bladesOnStops, total: done.length };   // for testing
   }
 
+  (window.__loadT = window.__loadT || []).push(['furn:signs', Math.round(performance.now())]);   // section timing (?debug)
   // traffic signals: pole on the right, mast arm over the lanes, 3-lamp heads facing the approaching driver
   const lampGeo = new THREE.CircleGeometry(0.1, 14);
   for (const k of ['A', 'B']) for (const c of ['r', 'y', 'g']) signalMats[k][c] = new THREE.MeshBasicMaterial({ color: 0x222222 });
   const headM = new THREE.MeshLambertMaterial({ color: 0x1b1c1e });
   for (const sig of F.signals) for (const [x, z, dx, dz, w] of sig.lines) {
-    stopBar(x, z, dx, dz, w);
+    const ow = oneWayAt(x, z, dx, dz); if (ow) oneWayApproaches++;
+    stopBar(x, z, dx, dz, w, ow);
     const group = Math.abs(dx) > Math.abs(dz) ? 'A' : 'B';
     const off = w / 2 + 1.0, sx = x + -dz * off, sz = z + dx * off;
     const g = new THREE.Group(), arm = off - w / 4;
@@ -183,8 +220,10 @@ const signalMats = { A: {}, B: {} };
       [['r', 0.3], ['y', 0], ['g', -0.3]].forEach(([c, dy]) => { const l = new THREE.Mesh(lampGeo, signalMats[group][c]); l.position.set(hx, 5.3 + dy, 0.145); g.add(l); });
     }
     place(g, sx, sz, yawTo(-dx, -dz), 0.2);
+    laneArrows(x, z, dx, dz, w, ow);
   }
   finish(barB, flatMat(4), { drape: true });
+  window.__arrows = { arrows: arrowCount, oneWayApproaches };   // for testing
 
   // Canada Post community mailboxes on a concrete pad
   const mailTex = canvasTex(128, 128, g => { g.fillStyle = '#d6d9dc'; g.fillRect(0, 0, 128, 128); g.strokeStyle = '#8c9196'; g.lineWidth = 2;
@@ -345,6 +384,106 @@ const signalMats = { A: {}, B: {} };
     }
     window.__wires.minorPoles = poles.length; window.__wires.minorAt = poles.slice(0, 3).map(p => [p.x, p.z]);
   }
+  (window.__loadT = window.__loadT || []).push(['furn:mail+lines', Math.round(performance.now())]);   // section timing (?debug)
+  // R60 loop round 1: fire hydrants and pad-mounted transformers along the residential streets (Street View cues).
+  // INFERRED: OSM maps neither here. Hydrants about every 110 m, alternating sides, ~1 m behind the curb (City of
+  // Ottawa spacing for residential streets is typically 90-150 m); colour red with a yellow bonnet (check on Street
+  // View). Transformers: one green pad-mount box about every 90 m on the other side, in the front-yard strip ~4.5 m
+  // behind the curb. Spots on driveways, roads or buildings are skipped.
+  {
+    const inDriveway = (x, z) => drivewayQuads.some(q => pointInPoly(x, z, q));
+    const free = (x, z) => !inBuilding(x, z, 0.8) && !onOtherRoad(x, z, null, 0.3) && !inDriveway(x, z)
+      && ![...gridNear(x, z)].some(it => it.kind === 'tree' && Math.hypot(it.x - x, it.z - z) < 1.2);
+    const hyd = [], trf = [];
+    for (const r of M.roads) {
+      if (!['residential', 'living_street', 'unclassified'].includes(r.t) || r.p.length < 2) continue;
+      let acc = 40 + (hashStr(r.n || String(r.p[0][0])) % 50), side = 1, acc2 = 70;
+      for (let i = 0; i + 1 < r.p.length; i++) {
+        const a = r.p[i], b = r.p[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L, nx = -uz, nz = ux;
+        for (let t = 0; t < L; t += 2) {
+          acc += 2; acc2 += 2;
+          if (acc >= 110) {
+            const x = a[0] + ux * t + nx * side * (r.w / 2 + 1.0), z = a[1] + uz * t + nz * side * (r.w / 2 + 1.0);
+            if (free(x, z)) { hyd.push([x, z, Math.atan2(ux, uz)]); acc = 0; side = -side; }
+          }
+          if (acc2 >= 90) {
+            const x = a[0] + ux * t - nx * side * (r.w / 2 + 4.5), z = a[1] + uz * t - nz * side * (r.w / 2 + 4.5);
+            if (free(x, z)) { trf.push([x, z, Math.atan2(ux, uz)]); acc2 = 0; }
+          }
+        }
+      }
+    }
+    const inst = (list, parts, r, solid) => {
+      const ims = parts.map(([g, mt]) => new THREE.InstancedMesh(g, mt, list.length));
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), ps = new THREE.Vector3();
+      list.forEach(([x, z, yaw], i) => {
+        q.setFromAxisAngle(UP, yaw); ps.set(x, heightAt(x, z), z); m.compose(ps, q, one);
+        for (const im of ims) im.setMatrixAt(i, m);
+        gridAdd({ kind: 'tree', x, z, r, fall: solid ? null : { parts: ims.map(im => [im, i, m.clone()]), base: ps.clone() } }, x - 1, z - 1, x + 1, z + 1);
+      });
+      for (const im of ims) { im.castShadow = true; scene.add(im); }
+    };
+    const red = new THREE.MeshLambertMaterial({ color: 0xb3261e }), yellow = new THREE.MeshLambertMaterial({ color: 0xe0b324 });
+    const hBody = new THREE.CylinderGeometry(0.13, 0.15, 0.62, 10); hBody.translate(0, 0.31, 0);
+    const hTop = new THREE.SphereGeometry(0.15, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); hTop.translate(0, 0.62, 0);
+    const hNut = new THREE.CylinderGeometry(0.035, 0.035, 0.08, 5); hNut.translate(0, 0.79, 0);
+    const hSide = new THREE.CylinderGeometry(0.055, 0.055, 0.46, 8); hSide.rotateZ(Math.PI / 2); hSide.translate(0, 0.45, 0);
+    const hFront = new THREE.CylinderGeometry(0.07, 0.07, 0.2, 8); hFront.rotateX(Math.PI / 2); hFront.translate(0, 0.42, 0.14);
+    inst(hyd, [[hBody, red], [hTop, yellow], [hNut, yellow], [hSide, yellow], [hFront, yellow]], 0.18, false);
+    const green = new THREE.MeshLambertMaterial({ color: 0x4f6b4a }), pad = new THREE.MeshLambertMaterial({ color: 0xa9a7a1 });
+    const tBox = new THREE.BoxGeometry(1.15, 1.0, 0.95); tBox.translate(0, 0.62, 0);
+    const tPad = new THREE.BoxGeometry(1.45, 0.12, 1.25); tPad.translate(0, 0.06, 0);
+    inst(trf, [[tBox, green], [tPad, pad]], 0.7, true);
+    window.__streetBits = { hydrants: hyd.length, transformers: trf.length, hydAt: hyd.slice(0, 3) };   // for testing
+  }
+  (window.__loadT = window.__loadT || []).push(['furn:towers', Math.round(performance.now())]);   // section timing (?debug)
+  // R61 loop 2 round 5: fences, hedges, walls and guard rails mapped in OpenStreetMap (tools/fetch_barriers.py).
+  // Wood privacy fence 1.8 m with posts every 2.4 m (chain link: grey see-through mesh 1.5 m), hedge 1.4 m tall and
+  // 0.9 m thick, concrete wall 1 m, guard rail 0.75 m. A mapped height wins. All solid (the car stops at them).
+  // INFERRED: heights and looks when OSM has no tag (typical Ottawa backyard / park fences).
+  {
+    const bars = F.barriers || [];
+    const woodB = makeBuilder(), meshB = makeBuilder(), hedgeB = makeBuilder(), wallB = makeBuilder();
+    const WOOD = new THREE.Color(0x8d7b62), POSTC = new THREE.Color(0x6e5f4b), MESH = new THREE.Color(0x8a8f94), HEDGE = new THREE.Color(0x3f6b33);
+    const CONC = new THREE.Color(0xb3b0a8), RAIL = new THREE.Color(0xa7acb1);
+    const slab = (B, a, b, y0, y1, t, col) => {   // a thin upright box along a-b, t thick
+      const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1, nx = -dz / L * t / 2, nz = dx / L * t / 2;
+      const A = [a[0] + nx, a[1] + nz], Bq = [b[0] + nx, b[1] + nz], C = [b[0] - nx, b[1] - nz], D = [a[0] - nx, a[1] - nz];
+      wallQuad(B, A, Bq, y0, y1, [nx / (t / 2), 0, nz / (t / 2)], col, 0, 0);
+      wallQuad(B, C, D, y0, y1, [-nx / (t / 2), 0, -nz / (t / 2)], col.clone().multiplyScalar(0.9), 0, 0);
+      flatQuad(B, A, Bq, C, D, y1, col.clone().multiplyScalar(1.05));
+    };
+    let segs = 0;
+    for (const b of bars) {
+      const kind = b.k === 'fence' && /chain|mesh|wire|metal/.test(b.f || '') ? 'mesh' : b.k;
+      const H = b.h > 0 ? Math.min(b.h, 4) : { fence: 1.8, mesh: 1.5, hedge: 1.4, wall: 1.0, retaining_wall: 0.9, guard_rail: 0.75, city_wall: 2 }[kind] || 1.2;
+      for (let i = 0; i + 1 < b.p.length; i++) {
+        const a = b.p[i], c = b.p[i + 1], L = Math.hypot(c[0] - a[0], c[1] - a[1]); if (L < 0.2) continue;
+        if (onOtherRoad((a[0] + c[0]) / 2, (a[1] + c[1]) / 2, null, -0.5)) continue;   // never across a carriageway
+        if (kind === 'hedge') slab(hedgeB, a, c, 0, H, 0.9, HEDGE);
+        else if (kind === 'mesh') slab(meshB, a, c, 0.05, H, 0.03, MESH);
+        else if (kind === 'fence') slab(woodB, a, c, 0.05, H, 0.04, WOOD);
+        else if (kind === 'guard_rail') slab(wallB, a, c, 0.45, H, 0.08, RAIL);
+        else slab(wallB, a, c, 0, H, 0.25, CONC);
+        if (kind === 'fence' || kind === 'mesh' || kind === 'guard_rail') {   // posts
+          const n = Math.max(1, Math.round(L / 2.4));
+          for (let k = 0; k <= n; k++) {
+            const x = a[0] + (c[0] - a[0]) * k / n, z = a[1] + (c[1] - a[1]) * k / n, ux = (c[0] - a[0]) / L * 0.06, uz = (c[1] - a[1]) / L * 0.06;
+            slab(kind === 'fence' ? woodB : wallB, [x - ux, z - uz], [x + ux, z + uz], 0, H + 0.08, 0.12, kind === 'fence' ? POSTC : RAIL);
+          }
+        }
+        gridAdd({ kind: 'wall', x1: a[0], z1: a[1], x2: c[0], z2: c[1] }, Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[0], c[0]), Math.max(a[1], c[1]));
+        segs++;
+      }
+    }
+    const lam = o => new THREE.MeshLambertMaterial(Object.assign({ vertexColors: true, side: THREE.DoubleSide }, o));
+    finish(woodB, lam({}), { drape: true, cast: true });
+    finish(hedgeB, lam({}), { drape: true, cast: true });
+    finish(wallB, lam({}), { drape: true, cast: true });
+    finish(meshB, lam({ transparent: true, opacity: 0.45, depthWrite: false }), { drape: true });
+    window.__barriers = { lines: bars.length, segments: segs, first: bars.slice(0, 3).map(b => [b.k, b.p[0]]) };   // for testing
+  }
+  (window.__loadT = window.__loadT || []).push(['furn:fences', Math.round(performance.now())]);   // section timing (?debug)
   // utility cabinets
   for (const [x, z] of F.cabinets) {
     const [dx, dz] = facing(x, z), g = new THREE.Group();

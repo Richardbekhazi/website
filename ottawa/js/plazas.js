@@ -208,7 +208,63 @@ const lotTrees = [];   // trees on the parking-lot islands; js/trees.js plants t
     nCan++; canAt.push([cx, cz, gas, name]);
   }
 
-  window.__plazas = { spaces, poles: poles.length, accessible: accSpaces, corrals, islands, spots, canopies: canAt };   // counts, for testing
+  // R61 loop 2 round 7: drive-throughs. For each fast-food place with a drive-through (OSM drive_through=yes, or a known
+  // drive-through chain with no tag), on the building wall nearest a service lane: a pickup window with a small canopy,
+  // a menu board and an order-speaker post ~14 m before the window, and a height bar ~26 m before it. Canadian lanes run
+  // counter-clockwise (the building is on the driver's left), which sets which way is "before".
+  // INFERRED: exact positions; the lane itself is the mapped service road.
+  const dtB = makeBuilder(), DARK = new THREE.Color(0x2b2e33), GLASSC = new THREE.Color(0x9fc3d6), BAR = new THREE.Color(0xe0b324), MENU = new THREE.Color(0x1d2a36);
+  const dtSpots = [], seenDT = [];
+  for (const [x, z, name] of (M.furniture.drivethru || [])) {
+    if (seenDT.some(([a, b]) => Math.hypot(a - x, b - z) < 15)) continue; seenDT.push([x, z]);
+    const host = M.buildings.find(b => pointInPoly(x, z, ring(b.p))); if (!host) continue;
+    let poly = ring(host.p); if (signedArea(poly) < 0) poly = poly.slice().reverse();
+    // the wall with a service lane closest outside it
+    let best = null;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 4) continue;
+      const n = outwardNormal(a, b, poly), mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+      for (const it of gridNear(mx + n[0] * 5, mz + n[2] * 5)) {
+        if (it.kind !== 'road' || it.seg.t !== 'service') continue; const sg = it.seg, dx = sg.x2 - sg.x1, dz = sg.z2 - sg.z1, L2 = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((mx - sg.x1) * dx + (mz - sg.z1) * dz) / L2)), px = sg.x1 + t * dx, pz = sg.z1 + t * dz, d = Math.hypot(px - mx, pz - mz);
+        const along = Math.abs((dx * (b[0] - a[0]) + dz * (b[1] - a[1])) / Math.sqrt(L2) / L);   // lane runs along the wall
+        if (d < 10 && along > 0.7 && (!best || d < best.d)) best = { d, a, b, n, L, px, pz, ux: dx / Math.sqrt(L2), uz: dz / Math.sqrt(L2), w: sg.w };
+      }
+    }
+    if (!best) continue;
+    const { a, b, n, L } = best;
+    // driving direction: the building must be on the driver's left (left of (ux, uz) is (uz, -ux))
+    let ux = best.ux, uz = best.uz; if ((uz * -n[0] + -ux * -n[2]) < 0) { ux = -ux; uz = -uz; }
+    // window: on the wall, at the point level with the lane's nearest point
+    const t = Math.max(1.2, Math.min(L - 1.2, ((best.px - a[0]) * (b[0] - a[0]) + (best.pz - a[1]) * (b[1] - a[1])) / L));
+    const wx = a[0] + (b[0] - a[0]) * t / L, wz = a[1] + (b[1] - a[1]) * t / L, y0 = 0;   // draped: heights are above the ground
+    const dirW = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    const at = (u, out) => [wx + dirW[0] * u + n[0] * out, wz + dirW[1] * u + n[2] * out];
+    const bxW = (u0, u1, out0, out1, y1, y2, col) => {   // a box in the wall's frame (u along the wall, out away from it)
+      const c = at((u0 + u1) / 2, out0); box(dtB, c[0], c[1], dirW, n, u1 - u0, out1 - out0, y0 + y1, y0 + y2, col);
+    };
+    bxW(-0.8, 0.8, 0.02, 0.06, 0.9, 2.1, GLASSC);         // pickup window glass
+    bxW(-0.95, 0.95, 0.02, 0.08, 0.8, 0.9, DARK);          // sill
+    bxW(-1.3, 1.3, 0.02, 1.0, 2.6, 2.75, DARK);            // little canopy over the window
+    // lane points before the window (opposite to the driving direction), on the driver's left = building side
+    const lx = best.px, lz = best.pz, left = [uz, -ux], off = best.w / 2 + 0.9;
+    const P = (back, side) => [lx - ux * back + left[0] * side, lz - uz * back + left[1] * side];
+    const mp = P(14, off), sp = P(17, off), hb = P(26, 0);
+    // along = true: the box's width runs along the lane (menu board side-on to the car); false: across the lane
+    const placeBox = (x, z, w, d, yA, yB, col, along) => along ? box(dtB, x, z, [ux, uz], [left[0], 0, left[1]], w, d, yA, yB, col)
+      : box(dtB, x, z, [left[0], left[1]], [ux, 0, uz], w, d, yA, yB, col);
+    placeBox(mp[0], mp[1], 2.2, 0.25, 0.6, 2.4, MENU, true);           // menu board
+    placeBox(mp[0], mp[1], 0.3, 0.3, 0, 0.6, DARK, true);              // its base
+    placeBox(sp[0], sp[1], 0.35, 0.3, 0, 1.4, DARK, true);             // order speaker post
+    for (const sd of [-1, 1]) { const q = P(26, sd * (best.w / 2 + 0.4)); placeBox(q[0], q[1], 0.15, 0.15, 0, 3.0, DARK, true);
+      gridAdd({ kind: 'tree', x: q[0], z: q[1], r: 0.15 }, q[0] - 1, q[1] - 1, q[0] + 1, q[1] + 1); }
+    const hc = P(26, 0); placeBox(hc[0], hc[1], best.w + 0.8, 0.15, 2.75, 2.95, BAR, false);   // height bar across the lane
+    gridAdd({ kind: 'tree', x: mp[0], z: mp[1], r: 0.5 }, mp[0] - 1, mp[1] - 1, mp[0] + 1, mp[1] + 1);
+    dtSpots.push([wx, wz, name, n[0], n[2]]);
+  }
+  window.__dtTris = dtB.pos.length / 9; finish(dtB, new THREE.MeshLambertMaterial({ vertexColors: true }), { drape: true, cast: true });
+
+  window.__plazas = { spaces, poles: poles.length, accessible: accSpaces, corrals, islands, spots, canopies: canAt, driveThrus: dtSpots };   // counts, for testing
 }
 
 (window.__loadT = window.__loadT || []).push(['plazas', Math.round(performance.now())]);   // load timing (see ?debug)
