@@ -18,21 +18,47 @@ const signalMats = { A: {}, B: {} };
 
   // street lights: real mapped lamps, arm reaching over the road (falls back to generated ones)
   const lamps = F.lamps.length ? F.lamps.map(([x, z]) => { const [dx, dz] = facing(x, z); return [x, z, dx, dz]; }) : lampSpots;
-  const spots = lamps.filter(([x, z]) => !inBuilding(x, z, 0.8));
+  const allSpots = lamps.filter(([x, z]) => !inBuilding(x, z, 0.8));
+  // R59 round 3: Gerry Lalonde Drive and the south end of Establish Avenue have black decorative poles with lantern
+  // heads on a curled arm (Street View Sep 2025, see RESEARCH); everywhere else the slim grey LED pole.
+  // INFERRED: where Establish switches style (taken as 70 m from the Gerry Lalonde corner).
+  let estCorner = null;   // where Establish meets Gerry Lalonde (a shared map point)
+  const gl = M.roads.filter(r => r.n === 'Gerry Lalonde Drive').flatMap(r => r.p);
+  for (const r of M.roads) if (r.n === 'Establish Avenue') for (const p of r.p) if (gl.some(g => Math.hypot(g[0] - p[0], g[1] - p[1]) < 1)) estCorner = p;
+  const isLantern = (x, z) => {
+    const r = nearestRoadPoint(x, z); if (!r || r.d > 25) return false;
+    if (r.n === 'Gerry Lalonde Drive') return true;
+    return r.n === 'Establish Avenue' && estCorner && Math.hypot(x - estCorner[0], z - estCorner[1]) < 70;
+  };
+  const spots = [], lanterns = [];
+  for (const s of allSpots) (isLantern(s[0], s[1]) ? lanterns : spots).push(s);
+  const plant = (list, parts) => {
+    const meshes = parts.map(([g, mat]) => new THREE.InstancedMesh(g, mat, list.length));
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), ps = new THREE.Vector3();
+    list.forEach(([x, z, dx, dz], i) => {
+      q.setFromAxisAngle(UP, Math.atan2(-dz, dx)); ps.set(x, heightAt(x, z), z); m.compose(ps, q, one);
+      for (const im of meshes) im.setMatrixAt(i, m);
+      gridAdd({ kind: 'tree', x, z, r: 0.15, fall: { parts: meshes.map(im => [im, i, m.clone()]), base: ps.clone() } }, x - 1, z - 1, x + 1, z + 1);
+    });
+    for (const im of meshes) { im.castShadow = true; scene.add(im); }
+  };
   // slim grey pole, short arm, small LED head (as on Establish Avenue, Street View Sep 2025)
   const poleG = new THREE.CylinderGeometry(0.065, 0.1, 8, 8); poleG.translate(0, 4, 0);
   const armG = new THREE.BoxGeometry(0.9, 0.06, 0.06); armG.translate(0.45, 7.85, 0);
   const headG = new THREE.CylinderGeometry(0.16, 0.2, 0.12, 12); headG.translate(0.9, 7.82, 0);
   const lampMetal = new THREE.MeshLambertMaterial({ color: 0x8b8f93 });
-  const meshes = [new THREE.InstancedMesh(poleG, lampMetal, spots.length), new THREE.InstancedMesh(armG, lampMetal, spots.length),
-    new THREE.InstancedMesh(headG, new THREE.MeshLambertMaterial({ color: 0x55585c, emissive: 0x222222 }), spots.length)];
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), ps = new THREE.Vector3();
-  spots.forEach(([x, z, dx, dz], i) => {
-    q.setFromAxisAngle(UP, Math.atan2(-dz, dx)); ps.set(x, heightAt(x, z), z); m.compose(ps, q, one);
-    for (const im of meshes) im.setMatrixAt(i, m);
-    gridAdd({ kind: 'tree', x, z, r: 0.15, fall: { parts: meshes.map(im => [im, i, m.clone()]), base: ps.clone() } }, x - 1, z - 1, x + 1, z + 1);
-  });
-  for (const im of meshes) { im.castShadow = true; scene.add(im); }
+  plant(spots, [[poleG, lampMetal], [armG, lampMetal], [headG, new THREE.MeshLambertMaterial({ color: 0x55585c, emissive: 0x222222 })]]);
+  // black lantern post: wider base, 5.6 m pole, a half-circle "shepherd's crook" arm, a hanging six-sided lantern
+  const LH = 5.6, LR = 0.45, black = new THREE.MeshLambertMaterial({ color: 0x1c1d1f });
+  const lBaseG = new THREE.CylinderGeometry(0.15, 0.21, 0.9, 8); lBaseG.translate(0, 0.45, 0);
+  const lPoleG = new THREE.CylinderGeometry(0.055, 0.085, LH, 8); lPoleG.translate(0, LH / 2, 0);
+  const lArmG = new THREE.TorusGeometry(LR, 0.03, 6, 14, Math.PI); lArmG.translate(LR, LH, 0);
+  const lCapG = new THREE.ConeGeometry(0.27, 0.24, 6); lCapG.translate(2 * LR, LH - 0.15, 0);
+  const lGlassG = new THREE.CylinderGeometry(0.2, 0.13, 0.45, 6); lGlassG.translate(2 * LR, LH - 0.495, 0);
+  const lTipG = new THREE.ConeGeometry(0.06, 0.16, 6); lTipG.rotateX(Math.PI); lTipG.translate(2 * LR, LH - 0.8, 0);
+  plant(lanterns, [[lBaseG, black], [lPoleG, black], [lArmG, black], [lCapG, black], [lTipG, black],
+    [lGlassG, new THREE.MeshLambertMaterial({ color: 0xf3ead2, emissive: 0x5a5140 })]]);
+  window.__lamps = { led: spots.length, lantern: lanterns.length, lanternAt: lanterns.slice(0, 5) };   // for testing
 
   // painted stop bars (white, 45 cm) across the approach lane
   const barB = makeBuilder(), white = new THREE.Color(0xf4f4f0);
@@ -70,6 +96,7 @@ const signalMats = { A: {}, B: {} };
       stops.push([end[0] - dx / L * back, end[1] - dz / L * back, dx / L, dz / L, r.w, 0]);
     }
   }
+  const stopPosts = [];   // so the street-name blades can share the post at the same corner (R59 round 4)
   for (const [x, z, dx, dz, w, all] of stops) {
     stopBar(x, z, dx, dz, w);
     const sx = x + -dz * (w / 2 + 0.9), sz = z + dx * (w / 2 + 0.9);
@@ -77,7 +104,7 @@ const signalMats = { A: {}, B: {} };
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.6, 6), metal); post.position.y = 1.3; g.add(post);
     const face = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.75), signMat); face.position.set(0, 2.45, 0.04); g.add(face);
     if (all) { const tab = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.22), tabMat); tab.position.set(0, 1.92, 0.04); g.add(tab); }
-    place(g, sx, sz, yawTo(-dx, -dz));
+    place(g, sx, sz, yawTo(-dx, -dz)); stopPosts.push({ g, x: sx, z: sz, used: false });
   }
 
   // street-name signs: City of Ottawa style (blue blade, white text), one post at each corner where two named
@@ -104,7 +131,7 @@ const signalMats = { A: {}, B: {} };
       if (!r.n || !CAR_ROADS.has(r.t) || r.t === 'service' || r.t === 'track') continue;
       r.p.forEach((p, i) => { const k = key(p); if (!at.has(k)) at.set(k, { p, arms: [] }); at.get(k).arms.push({ r, i }); });
     }
-    const done = [];
+    const done = []; let bladesOnStops = 0;
     for (const { p, arms } of at.values()) {
       const names = [...new Set(arms.map(a => a.r.n))];
       if (names.length < 2) continue;
@@ -121,16 +148,23 @@ const signalMats = { A: {}, B: {} };
       }
       if (!spot) continue;
       done.push({ pair: na + '|' + nb, x: p[0], z: p[1] });
-      const g = new THREE.Group();
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.5, 6), metal); post.position.y = 1.75; g.add(post);
+      // a stop sign at this corner carries the blades on top of its own post, as in Ottawa (Street View, Establish /
+      // Gerry Lalonde); otherwise the blades get a post of their own
+      let host = null;
+      for (const sp of stopPosts) if (!sp.used && Math.hypot(sp.x - p[0], sp.z - p[1]) < 16 && (!host || Math.hypot(sp.x - p[0], sp.z - p[1]) < Math.hypot(host.x - p[0], host.z - p[1]))) host = sp;
+      const g = host ? host.g : new THREE.Group(), yaw0 = host ? host.g.rotation.y : 0;
+      if (host) { host.used = true; bladesOnStops++;
+        const ext = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.95, 6), metal); ext.position.y = 3.05; ext.castShadow = true; g.add(ext);
+      } else { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.5, 6), metal); post.position.y = 1.75; g.add(post); }
       [[A, na, 3.05], [B, nb, 3.4]].forEach(([d, name, y]) => {
         for (const back of [0, Math.PI]) {   // two faces back-to-back so the name reads from both directions
           const m = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.32), bladeMat(name));
-          m.position.y = y; m.rotation.y = Math.atan2(-d.dz, d.dx) + back; g.add(m);
+          m.position.y = y; m.rotation.y = Math.atan2(-d.dz, d.dx) + back - yaw0; m.castShadow = true; g.add(m);
         }
       });
-      place(g, spot[0], spot[1], 0, 0.12);
+      if (!host) place(g, spot[0], spot[1], 0, 0.12);
     }
+    window.__nameSigns = { onStopPosts: bladesOnStops, total: done.length };   // for testing
   }
 
   // traffic signals: pole on the right, mast arm over the lanes, 3-lamp heads facing the approaching driver
@@ -188,24 +222,46 @@ const signalMats = { A: {}, B: {} };
     place(g, x, z, yawTo(dx, dz), 0.4);
   }
   // hydro transmission towers: the lidar's tall (>28 m) features, merged when several peaks belong to one tower
-  if (LD) {
-    const towers = [];
-    for (const [x, z, h] of LD.trees) if (h > 28) {
-      const t = towers.find(t => Math.hypot(t[0] - x, t[1] - z) < 18);
-      if (t) { if (h > t[2]) { t[0] = x; t[1] = z; t[2] = h; } } else towers.push([x, z, h]);
+  // hydro transmission towers. R59 round 5: from OpenStreetMap (power=tower, tools/fetch_power.py) with the wires along
+  // each mapped power line. The lidar's tall points (>28 m) turned out to be mostly the wires themselves, which drew a
+  // "forest" of towers ~25 m apart; they are only the fallback now when no OSM towers are in the data.
+  {
+    let towers = [];
+    const lidarTop = (x, z) => { let h = 0; if (LD) for (const t of LD.trees) if (Math.abs(t[0] - x) < 12 && Math.abs(t[1] - z) < 12 && t[2] > h) h = t[2]; return h; };
+    if (F.towers && F.towers.length) {
+      for (const [x, z, h] of F.towers) { const lh = lidarTop(x, z); towers.push([x, z, h > 0 ? h : lh > 25 && lh < 55 ? lh : 36]); }
+    } else if (LD) {
+      for (const [x, z, h] of LD.trees) if (h > 28) {
+        const t = towers.find(t => Math.hypot(t[0] - x, t[1] - z) < 18);
+        if (t) { if (h > t[2]) { t[0] = x; t[1] = z; t[2] = h; } } else towers.push([x, z, h]);
+      }
     }
+    const lines = (F.powerlines || []);
+    // line direction at each tower: average of the directions to its neighbours along the mapped line
+    const dirAt = (x, z) => {
+      let dx = 0, dz = 0;
+      for (const l of lines) l.forEach((p, i) => {
+        if (Math.hypot(p[0] - x, p[1] - z) > 1.5) return;
+        for (const j of [i - 1, i + 1]) if (l[j]) { const ex = (l[j][0] - p[0]) * (j > i ? 1 : -1), ez = (l[j][1] - p[1]) * (j > i ? 1 : -1), L = Math.hypot(ex, ez) || 1; dx += ex / L; dz += ez / L; }
+      });
+      return dx || dz ? [dx, dz] : null;
+    };
     const steel = new THREE.MeshLambertMaterial({ color: 0x9a9ea2 });
     const beam = (g, a, b, w = 0.18) => {   // thin box from point a to point b
       const d = new THREE.Vector3().subVectors(b, a), len = d.length();
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, len, w), steel);
       m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(UP, d.normalize()); g.add(m);
     };
-    // line direction: towards the nearest other tower
+    const towerTops = [];
     for (const [x, z, h] of towers) {
-      const other = towers.filter(t => t[0] !== x || t[1] !== z).sort((a, b) => Math.hypot(a[0] - x, a[1] - z) - Math.hypot(b[0] - x, b[1] - z))[0];
-      const yaw = other ? Math.atan2(other[0] - x, other[1] - z) : 0;
+      const d = dirAt(x, z);
+      const other = d ? null : towers.filter(t => t[0] !== x || t[1] !== z).sort((a, b) => Math.hypot(a[0] - x, a[1] - z) - Math.hypot(b[0] - x, b[1] - z))[0];
+      const yaw = d ? Math.atan2(d[0], d[1]) : other ? Math.atan2(other[0] - x, other[1] - z) : 0;
       const g = new THREE.Group(), V = (a, y, b) => new THREE.Vector3(a, y, b);
-      const base = 3.2, top = 0.9, H = h * 0.82;
+      // towers of parallel lines stand only ~8 m apart: narrower arms so they don't overlap
+      const nd = Math.min(...towers.filter(t => t[0] !== x || t[1] !== z).map(t => Math.hypot(t[0] - x, t[1] - z)), 99);
+      const k = Math.min(1, nd * 0.45 / 7);
+      const base = 3.2 * Math.max(0.6, k), top = 0.9, H = h * 0.82;
       const legs = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
       legs.forEach(([a, b]) => beam(g, V(a * base, 0, b * base), V(a * top, H, b * top), 0.25));
       for (let k = 1; k <= 6; k++) {   // horizontal rings with cross bracing
@@ -216,10 +272,78 @@ const signalMats = { A: {}, B: {} };
           beam(g, V(a0 * s0, y0, b0 * s0), V(a1 * s1, y1, b1 * s1), 0.08);
         }
       }
-      for (const [y, w] of [[H * 0.78, 7], [H, 5.5]]) beam(g, V(-w, y, 0), V(w, y, 0), 0.3);   // cross arms
+      for (const [y, w] of [[H * 0.78, 7 * k], [H, 5.5 * k]]) beam(g, V(-w, y, 0), V(w, y, 0), 0.3);   // cross arms
       beam(g, V(0, H, 0), V(0, h, 0), 0.2);   // peak (ground wire)
       place(g, x, z, yaw, 2.5, true);   // towers are solid steel: you crash
+      towerTops.push({ x, z, yaw, H, k, y0: heightAt(x, z), peak: h });
     }
+    // wires: 4 conductors (both cross-arm ends) and the ground wire on the peak between towers that follow each other
+    // on a mapped line, sagging about 3% of the span. INFERRED: wire count and sag (typical double-circuit line).
+    const pts = []; let spans = 0;
+    const local = (t, lx, y) => [t.x + Math.cos(t.yaw) * lx, t.y0 + y, t.z - Math.sin(t.yaw) * lx];
+    const towerAt = (p) => towerTops.find(t => Math.hypot(t.x - p[0], t.z - p[1]) < 1.5);
+    for (const l of lines) for (let i = 0; i + 1 < l.length; i++) {
+      const A = towerAt(l[i]), B = towerAt(l[i + 1]); if (!A || !B) continue;
+      const span = Math.hypot(B.x - A.x, B.z - A.z), sag = span * 0.03; spans++;
+      for (const [lx, which] of [[7, 'low'], [-7, 'low'], [5.5, 'high'], [-5.5, 'high'], [0, 'peak']]) {
+        const yOf = t => which === 'peak' ? t.peak : which === 'high' ? t.H : t.H * 0.78;
+        const a = local(A, lx * A.k, yOf(A));
+        // the matching hook on B: the same arm, on whichever side is nearer (so wires don't cross)
+        const c1 = local(B, lx * B.k, yOf(B)), c2 = local(B, -lx * B.k, yOf(B));
+        const b = Math.hypot(c1[0] - a[0], c1[2] - a[2]) <= Math.hypot(c2[0] - a[0], c2[2] - a[2]) ? c1 : c2;
+        const N = 20; let prev = a;
+        for (let k = 1; k <= N; k++) {
+          const t = k / N, q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - 4 * sag * t * (1 - t), a[2] + (b[2] - a[2]) * t];
+          pts.push(prev[0], prev[1], prev[2], q[0], q[1], q[2]); prev = q;
+        }
+      }
+    }
+    if (pts.length) {
+      const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      scene.add(new THREE.LineSegments(wg, new THREE.LineBasicMaterial({ color: 0x3a3c3f })));
+    }
+    window.__wires = { towers: towerTops.length, spans, fromOSM: !!(F.towers && F.towers.length) };   // for testing
+
+    // minor power lines (OSM power=minor_line, R59 round 6): a wooden pole at every mapped point, a cross arm, three
+    // wires with 1.5% sag. INFERRED: 11 m cedar poles with a 2.4 m arm, the usual Hydro Ottawa distribution pole.
+    const minor = F.minorlines || [], poles = [];
+    const mpts = [];
+    for (const l of minor) {
+      const ps = l.map(([x, z], i) => {
+        const a = l[Math.max(0, i - 1)], b = l[Math.min(l.length - 1, i + 1)], yaw = Math.atan2(b[0] - a[0], b[1] - a[1]);
+        const P = { x, z, yaw, y0: heightAt(x, z), ok: !inBuilding(x, z, 0.5) && !onOtherRoad(x, z, null, 0.3) };
+        if (P.ok) poles.push(P); return P;
+      });
+      for (let i = 0; i + 1 < ps.length; i++) {
+        const A = ps[i], B = ps[i + 1], span = Math.hypot(B.x - A.x, B.z - A.z); if (span > 120) continue;
+        for (const lx of [-1.1, 0, 1.1]) {
+          const y = lx === 0 ? 11.2 : 10.4;
+          const a = [A.x + Math.cos(A.yaw) * lx, A.y0 + y, A.z - Math.sin(A.yaw) * lx], b = [B.x + Math.cos(B.yaw) * lx, B.y0 + y, B.z - Math.sin(B.yaw) * lx];
+          const N = 10; let prev = a;
+          for (let k = 1; k <= N; k++) { const t = k / N, q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - 4 * span * 0.015 * t * (1 - t), a[2] + (b[2] - a[2]) * t]; mpts.push(...prev, ...q); prev = q; }
+        }
+      }
+    }
+    if (poles.length) {
+      const wood = new THREE.MeshLambertMaterial({ color: 0x6b5641 });
+      const poleG2 = new THREE.CylinderGeometry(0.12, 0.16, 11.4, 7); poleG2.translate(0, 5.7, 0);
+      const armG2 = new THREE.BoxGeometry(2.4, 0.1, 0.1); armG2.translate(0, 10.3, 0);
+      const insG = new THREE.CylinderGeometry(0.05, 0.05, 0.2, 6);
+      const ins = [[-1.1, 10.45], [1.1, 10.45]].map(([x, y]) => insG.clone().translate(x, y, 0));
+      const insMat = new THREE.MeshLambertMaterial({ color: 0xd9d6cc });
+      const parts = [[poleG2, wood], [armG2, wood], [ins[0], insMat], [ins[1], insMat]];
+      const ims = parts.map(([g, mt]) => new THREE.InstancedMesh(g, mt, poles.length));
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), ps = new THREE.Vector3();
+      poles.forEach((P, i) => {
+        q.setFromAxisAngle(UP, P.yaw); ps.set(P.x, P.y0, P.z); m.compose(ps, q, one);
+        for (const im of ims) im.setMatrixAt(i, m);
+        gridAdd({ kind: 'tree', x: P.x, z: P.z, r: 0.2, fall: { parts: ims.map(im => [im, i, m.clone()]), base: ps.clone() } }, P.x - 1, P.z - 1, P.x + 1, P.z + 1);
+      });
+      for (const im of ims) { im.castShadow = true; scene.add(im); }
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(mpts, 3));
+      scene.add(new THREE.LineSegments(mg, new THREE.LineBasicMaterial({ color: 0x2e2f31 })));
+    }
+    window.__wires.minorPoles = poles.length; window.__wires.minorAt = poles.slice(0, 3).map(p => [p.x, p.z]);
   }
   // utility cabinets
   for (const [x, z] of F.cabinets) {

@@ -251,7 +251,7 @@ function nearestRoadPoint(x, z) {
     const dx = s.x2-s.x1, dz = s.z2-s.z1, L2 = dx*dx + dz*dz || 1;
     const t = Math.max(0, Math.min(1, ((x-s.x1)*dx + (z-s.z1)*dz) / L2));
     const px = s.x1 + t*dx, pz = s.z1 + t*dz, d = Math.hypot(x - px, z - pz);
-    if (!best || d < best.d) best = { d, x: px, z: pz, w: s.w };
+    if (!best || d < best.d) best = { d, x: px, z: pz, w: s.w, n: s.n };
   }
   return best;
 }
@@ -417,8 +417,10 @@ function shopSign(front, name, y, bg = '#1d2a36', fg = '#ffffff', h = 0.8) {
   sign.rotation.y = Math.atan2(n[0], n[2]);
   scene.add(sign);
 }
+const canopies = [];   // OSM building=roof (gas station canopies, carports): drawn open on posts by js/plazas.js (R59)
 M.buildings.forEach((b, bi) => {
   if (b.am === 'shelter') return;   // open park shelters are drawn by js/parks.js
+  if (b.t === 'roof') { canopies.push(b); return; }
   let poly = ring(b.p); if (poly.length < 3) return;
   if (signedArea(poly) < 0) poly = poly.slice().reverse();
   const area = Math.abs(signedArea(poly));

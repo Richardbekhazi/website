@@ -17,6 +17,8 @@ function nearRoad(x, z, margin) {
 const treeSpots = [];
 function treeOK(x, z, pad = 2.2) {
   if (inBuilding(x, z, pad) || nearRoad(x, z, 1.2)) return false;
+  // R59 round 7: not growing through a pole, sign or tower (street furniture is in the grid as 'tree' items)
+  for (const it of gridNear(x, z)) if (it.kind === 'tree' && Math.hypot(it.x - x, it.z - z) < it.r + 1.3) return false;
   for (const p of blockedAreas) if (pointInPoly(x, z, p)) return false;
   return true;
 }
@@ -33,6 +35,7 @@ if (LD) {
     if (treeOK(x, z, 1.2)) treeSpots.push([x, z, 3 + (hashStr(bi) % 20) / 10, 1.1]);
   }
   for (const t of youngTrees) if (treeOK(t[0], t[1], 1.0)) treeSpots.push(t);
+  for (const t of lotTrees) treeSpots.push(t);   // parking-lot islands (js/plazas.js)
 } else {
   for (let i = 0; i < 2600; i++) { const x = minX + rand() * (maxX - minX), z = minZ + rand() * (maxZ - minZ); if (treeOK(x, z)) treeSpots.push([x, z, 5 + rand() * 4, 2 + rand()]); }
 }
