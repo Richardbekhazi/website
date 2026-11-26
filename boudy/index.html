@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#16181b">
-  <title>Abdallah Najem: six versions of the website</title>
+  <title>Abdallah Najem: seven versions of the website</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
@@ -49,20 +49,37 @@
     .card__inks { display: flex; }
     .card__inks i { width: 1.5rem; height: 1.5rem; }
 
+    .star { background: #070b14; color: #eef3fa; padding: clamp(4rem, 10vw, 8.5rem) var(--px); }
+    .star__card { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(1.5rem, 4.5vw, 4.5rem); align-items: center; text-decoration: none; }
+    .star__shot { overflow: hidden; aspect-ratio: 16 / 10; background: #101829; }
+    .star__shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: scale 0.9s var(--ease); }
+    .star__card:hover .star__shot img, .star__card:focus-visible .star__shot img { scale: 1.035; }
+    .star__text { display: grid; gap: 1.1rem; }
+    .star__new { font-weight: 600; font-size: 1.0625rem; color: #ffb84d; }
+    .star__name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.2rem 1rem; }
+    .star__name b { font: 800 clamp(3rem, 6.4vw, 6.5rem) / 0.9 var(--sans); font-stretch: 106%; letter-spacing: -0.045em; }
+    .star__name span { font-weight: 600; font-size: clamp(1.125rem, 1.6vw, 1.5rem); }
+    .star__say { font-size: clamp(1.0625rem, 1.35vw, 1.25rem); line-height: 1.45; max-width: 32em; }
+    .star__open { background: #ffb84d; color: #070b14; min-height: 3.5rem; padding: 0 1.5rem; font-size: 1.0625rem; }
+    .star__card:hover .star__open, .star__card:focus-visible .star__open { background: #eef3fa; color: #070b14; }
+    .star__card:focus-visible { outline-color: #ffb84d; }
+    .star .card__foot { margin-top: 0.6rem; }
+
     .end { background: var(--ink); color: var(--bone); padding: 1.5rem var(--px); font-size: 0.9375rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
 
     .anim .top > *, .anim .wall > li { opacity: 0; translate: 0 1.5rem; }
     .anim.is-in .top > *, .anim.is-in .wall > li { opacity: 1; translate: none; transition: opacity 0.7s var(--ease), translate 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 80ms); }
 
     @media (max-width: 1100px) { .wall { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .star__card { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 620px) { .wall { grid-template-columns: minmax(0, 1fr); } }
   </style>
 </head>
 <body>
   <header class="top">
-    <h1 style="--d: 0">Six versions, one to choose</h1>
-    <p style="--d: 1">Six designs for the website of <strong>Abdallah Najem</strong>, physiotherapist in Ottawa. Open each one, try it on a phone too, and say which you like. Every version has a French switch in its top bar.</p>
+    <h1 style="--d: 0">Seven versions, one to choose</h1>
+    <p style="--d: 1">Seven designs for the website of <strong>Abdallah Najem</strong>, physiotherapist in Ottawa. Open each one, try it on a phone too, and say which you like. Every version has a French switch in its top bar.</p>
   </header>
 
   <main>
@@ -125,7 +142,7 @@
       <li style="--d: 7">
         <a class="card" href="v6/">
           <span class="card__shot"><img src="previews/v6.jpg" width="1440" height="900" alt="First screen of version 6"></span>
-          <span class="card__name"><b>Version 6</b><span>Still, the newest</span></span>
+          <span class="card__name"><b>Version 6</b><span>Still</span></span>
           <span class="card__text">Nothing scrolls. Seven colour sheets share one screen: point at a colour and it slides open, point at a word and its details appear.</span>
           <span class="card__foot">
             <span class="card__open">Open version 6 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
@@ -134,6 +151,22 @@
         </a>
       </li>
     </ul>
+
+    <!-- The newest version has the floor to itself -->
+    <section class="star" aria-labelledby="star-name">
+      <a class="star__card" href="v7/">
+        <span class="star__shot"><img src="previews/v7.jpg" width="1440" height="900" alt="First screen of version 7"></span>
+        <span class="star__text">
+          <span class="star__new">The newest</span>
+          <span class="star__name" id="star-name"><b>Version 7</b><span>Points</span></span>
+          <span class="star__say">One scene behind the whole page. Fifteen thousand points of light draw the inner ear in 3D, gather into a spine as you scroll, and come to rest in one level line. Press “Turn your head” and the amber crystals tumble, then settle.</span>
+          <span class="card__foot">
+            <span class="card__open star__open">Open version 7 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
+            <span class="card__inks" aria-hidden="true"><i style="background:#eef3fa"></i><i style="background:#cfe6ff"></i><i style="background:#ffb84d"></i><i style="background:#101829"></i></span>
+          </span>
+        </span>
+      </a>
+    </section>
   </main>
 
   <footer class="end">
