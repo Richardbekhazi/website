@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 
   <script>
@@ -128,9 +128,9 @@
     </section>
 
     <!-- 2. About: the person, in a real photograph -->
-    <section class="sec about" id="about" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.35" aria-labelledby="about-title">
+    <section class="sec about" id="about" data-shape="ring" data-follow=".about__fig" data-x="-0.5" data-y="0.1" data-scale="1" data-alpha="1" aria-labelledby="about-title">
       <figure class="about__fig" data-in>
-        <picture><source srcset="assets/images/abdallah-portrait-600.webp 600w, assets/images/abdallah-portrait.webp 1000w" sizes="(max-width: 800px) 90vw, 36vw" type="image/webp"><img src="assets/images/abdallah-portrait.jpg" width="1000" height="1250" alt="Abdallah Najem in black scrubs, arms crossed, smiling" data-i18n-attr="alt:portraitAlt" loading="lazy"></picture>
+        <img src="assets/images/abdallah-cutout.webp" srcset="assets/images/abdallah-cutout-560.webp 560w, assets/images/abdallah-cutout.webp 1000w" sizes="(max-width: 800px) 80vw, 34vw" width="1000" height="1250" alt="Abdallah Najem in black scrubs, arms crossed, smiling" data-i18n-attr="alt:portraitAlt" loading="lazy">
       </figure>
       <div class="about__copy">
         <h2 class="h" id="about-title" data-in data-i18n="aboutTitle">Assessment first, every time</h2>
@@ -184,21 +184,32 @@
       </div>
       <ol class="steps">
         <li data-in>
-          <picture><source srcset="assets/images/clinic-treatment-room-tall.webp" type="image/webp"><img src="assets/images/clinic-treatment-room-tall.jpg" width="720" height="960" alt="A treatment room at Arro Wellness with rehab equipment on the wall" data-i18n-attr="alt:stepImg1" loading="lazy"></picture>
           <h3 data-i18n="step1Title">Assess</h3>
           <p data-i18n="step1Text">We talk about what you feel and what you want to get back to. Then I look at how you move, to find what is driving the problem, not only where it hurts.</p>
         </li>
         <li data-in>
-          <picture><source srcset="assets/images/clinic-treatment-table.webp" type="image/webp"><img src="assets/images/clinic-treatment-table.jpg" width="630" height="788" alt="An adjustable treatment table at Arro Wellness" data-i18n-attr="alt:stepImg2" loading="lazy"></picture>
           <h3 data-i18n="step2Title">Treat</h3>
           <p data-i18n="step2Text">Hands-on treatment targets what the assessment found: soft tissue mobilization, manual therapy and, when it suits, shockwave or vestibular techniques.</p>
         </li>
         <li data-in>
-          <picture><source srcset="assets/images/clinic-training-area.webp" type="image/webp"><img src="assets/images/clinic-training-area.jpg" width="1100" height="687" alt="Training area with squat racks for exercise" data-i18n-attr="alt:stepImg3" loading="lazy"></picture>
           <h3 data-i18n="step3Title">Exercise</h3>
           <p data-i18n="step3Text">You leave with a short set of exercises chosen for you, so the progress you make in the clinic keeps going at home.</p>
         </li>
       </ol>
+    </section>
+
+    <!-- Languages: the same request, four ways -->
+    <section class="sec langs" id="languages" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.3" aria-labelledby="langs-title">
+      <div class="langs__head">
+        <h2 class="h" id="langs-title" data-in data-i18n="langsTitle">Your care in your language</h2>
+        <p class="lead" data-in data-i18n="langsText">Pain and dizziness are hard enough to describe. You can do it in the language you are most comfortable with.</p>
+      </div>
+      <ul class="langs__list">
+        <li data-in><span class="langs__say">Ask for Abdallah</span><span class="langs__lv">English · <span data-i18n="lvFluent">Fluent</span></span></li>
+        <li data-in><span class="langs__say" lang="fr">Demandez Abdallah</span><span class="langs__lv"><span lang="fr">Français</span> · <span data-i18n="lvFluent">Fluent</span></span></li>
+        <li data-in><span class="langs__say" lang="ar" dir="rtl">اطلبوا عبدالله</span><span class="langs__lv"><span lang="ar">العربية</span> · <span data-i18n="lvNative">Native</span></span></li>
+        <li data-in><span class="langs__say" lang="es">Pregunte por Abdallah</span><span class="langs__lv"><span lang="es">Español</span> · <span data-i18n="lvBasic">Basic clinical</span></span></li>
+      </ul>
     </section>
 
     <!-- 6. Questions -->
@@ -260,6 +271,7 @@
   </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
   <script src="js/i18n.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

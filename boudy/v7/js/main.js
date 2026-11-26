@@ -190,8 +190,19 @@
     return out;
   }
 
+  function ring(N) { // a circle that faces the reader, with a loose halo: it stands behind the portrait
+    var out = new Float32Array(N * 3);
+    for (var i = 0; i < N; i++) {
+      var a = rnd() * Math.PI * 2, halo = rnd() < 0.22;
+      var r = 1.25 + gauss() * (halo ? 0.22 : 0.035);
+      out[i * 3] = r * Math.cos(a); out[i * 3 + 1] = r * Math.sin(a); out[i * 3 + 2] = gauss() * (halo ? 0.3 : 0.05);
+    }
+    return out;
+  }
+
   /* ---------- The scene ---------- */
   var scene = null;
+  var lenis = null;
 
   function sceneSetup() {
     var canvas = $('[data-scene]');
@@ -204,7 +215,7 @@
     var small = window.innerWidth < 800;
     var N = small ? 8000 : 15000;
     var CR = 70; // the crystals: the last points of the cloud, in amber
-    var shapes = { ear: ear(N), spine: spine(N), field: field(N), line: line(N) };
+    var shapes = { ear: ear(N), spine: spine(N), field: field(N), line: line(N), ring: ring(N) };
     shapes.crystals = shapes.ear;
 
     var pos = new Float32Array(shapes.field);
@@ -273,9 +284,17 @@
       cur.x = wide ? parseFloat(best.getAttribute('data-x')) * halfW : 0;
       cur.y = wide ? parseFloat(best.getAttribute('data-y')) * halfH : (shape === 'field' || shape === 'line' ? 0 : halfH * (shape === 'spine' ? 0.3 : 0.44));
       if (!wide && shape === 'field') cur.alpha *= 0.7;
+      // a shape that stands behind something on the page follows it
+      var follow = best.getAttribute('data-follow'), el = follow ? $(follow, best) : null;
+      if (el) {
+        var fr = el.getBoundingClientRect();
+        cur.x = ((fr.left + fr.width / 2) / W * 2 - 1) * halfW;
+        cur.y = -((fr.top + fr.height * 0.4) / H * 2 - 1) * halfH;
+        cur.scale = (fr.width / W * 2 * halfW) / 2.5 * 0.96;
+      }
     }
 
-    var gx = 0, gy = 0, gs = 0.6, rotY = 0.6, rotX = 0, rotZ = 0, alpha = 0;
+    var gx = 0, gy = 0, gs = 0.6, rotY = 0.6, rotX = 0, rotZ = 0, alpha = 0, ringSpin = 0;
     var mx = 0, my = 0, last = 0, running = false, visible = true;
     var turnFrom = -1, shift = 0;
 
@@ -314,15 +333,17 @@
       var e = snap ? 1 : 1 - Math.pow(0.94, f);
       gx += (cur.x - gx) * e; gy += (cur.y - gy) * e; gs += (cur.scale - gs) * e; alpha += (cur.alpha - alpha) * e;
       var spinning = cur.shape === 'ear' || cur.shape === 'crystals';
-      if (cur.shape === 'line') { var home = Math.round(rotY / (Math.PI * 2)) * Math.PI * 2; rotY += (home - rotY) * e; }
+      var flat = cur.shape === 'line' || cur.shape === 'ring';
+      if (cur.shape === 'ring' && !reduce) ringSpin += dt * 0.07;
+      if (flat) { var home = Math.round(rotY / (Math.PI * 2)) * Math.PI * 2; rotY += (home - rotY) * e; }
       else if (cur.shape === 'spine') { var sway = Math.round(rotY / (Math.PI * 2)) * Math.PI * 2 + 0.55 * Math.sin(now / 2600); rotY += (sway - rotY) * e * 0.6; }
       else if (!reduce) rotY += dt * (spinning ? 0.22 : 0.02);
       var wantZ = turnFrom >= 0 ? 0.55 * Math.sin(((now - turnFrom) / 3000) * Math.PI * 2) * (1 - (now - turnFrom) / 3000) : 0;
       rotZ += (wantZ - rotZ) * (snap ? 1 : 1 - Math.pow(0.85, f));
-      rotX += ((cur.shape === 'line' ? 0 : my * 0.18 + (spinning ? 0.18 : 0)) - rotX) * e;
+      rotX += ((flat ? 0 : my * 0.18 + (spinning ? 0.18 : 0)) - rotX) * e;
       group.position.set(gx, gy, 0);
       group.scale.setScalar(gs);
-      group.rotation.set(rotX, rotY + (cur.shape === 'line' ? 0 : mx * 0.3), rotZ);
+      group.rotation.set(rotX, rotY + (flat ? 0 : mx * 0.3), rotZ + (cur.shape === 'ring' ? ringSpin : 0));
       mat.uniforms.uAlpha.value = alpha;
       renderer.render(world, cam);
     }
@@ -386,10 +407,26 @@
     all.forEach(function (det) { det.addEventListener('toggle', function () { if (det.open) all.forEach(function (o) { if (o !== det) o.open = false; }); }); });
   }
 
+  // Smooth wheel scrolling, when motion is welcome; links inside the page use it too.
+  function smooth() {
+    if (reduce || !window.Lenis) return;
+    try { lenis = new window.Lenis({ lerp: 0.1 }); } catch (e) { lenis = null; return; }
+    root.classList.add('has-lenis');
+    (function raf(now) { lenis.raf(now); window.requestAnimationFrame(raf); })(window.performance.now());
+    d.addEventListener('click', function (e) {
+      var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      var to = a ? d.getElementById(a.getAttribute('href').slice(1)) : null;
+      if (!to) return;
+      e.preventDefault();
+      lenis.scrollTo(to, { offset: a.getAttribute('href') === '#top' ? 0 : -40 });
+    });
+  }
+
   function start() {
     collectEnglish();
     applyLang(initialLang());
     smallThings();
+    smooth();
     entrances();
     if (window.__animFailsafe) window.clearTimeout(window.__animFailsafe);
     try { sceneSetup(); } catch (e) { root.classList.add('no-gl'); if (window.console) window.console.error(e); }

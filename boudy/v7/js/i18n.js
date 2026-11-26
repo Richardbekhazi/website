@@ -30,6 +30,7 @@ window.I18N = {
     capSpine: 'Vingt-quatre vertèbres, dessinées en points.',
     capCrystals: 'Les points ambrés sont les cristaux. Appuyez sur le bouton : ils roulent, puis se déposent.',
     ctaTitle: 'Réservez en ligne, ou appelez',
+    langsTitle: 'Vos soins dans votre langue',
     visitTitle: 'À quoi vous attendre',
     sceneLabel: 'Animation décorative : des points qui dessinent l’oreille interne puis la colonne vertébrale',
 
