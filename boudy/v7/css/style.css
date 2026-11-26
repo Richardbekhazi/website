@@ -26,7 +26,6 @@ img, picture { display: block; max-width: 100%; }
 a { color: inherit; }
 p { text-wrap: pretty; }
 h1, h2, h3 { font-family: var(--serif); font-weight: 500; text-wrap: balance; }
-.has-lenis { scroll-behavior: auto; }
 :focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .skip { position: absolute; left: 1rem; top: -4rem; z-index: 60; padding: 0.75rem 1rem; background: var(--amber); color: var(--bg); font-weight: 600; border-radius: 999px; }
@@ -143,11 +142,13 @@ main, .foot { position: relative; z-index: 1; }
 .clinic__card p:last-child { grid-column: 1 / -1; }
 .clinic__card a { text-underline-offset: 0.25em; }
 .clinic__pics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-/* The photographs take the page's blue until you point at them. */
-.clinic__pics picture { overflow: hidden; border-radius: 1.25rem; background: #1f4577; aspect-ratio: 1; isolation: isolate; }
-.clinic__pics picture:first-child { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
-.clinic__pics img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: luminosity; filter: contrast(1.15) brightness(0.8); transition: scale 0.9s var(--ease); }
-.clinic__pics picture:hover img { mix-blend-mode: normal; filter: none; scale: 1.03; }
+/* The photographs are toned in the page's blue (as files, so nothing is blended while you scroll) and show their own colours when you point at them. */
+.clinic__pics .pic { position: relative; overflow: hidden; border-radius: 1.25rem; background: var(--raise); aspect-ratio: 1; }
+.clinic__pics .pic:first-child { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+.clinic__pics picture { height: 100%; }
+.clinic__pics img { width: 100%; height: 100%; object-fit: cover; }
+.clinic__pics .pic__colour { position: absolute; inset: 0; opacity: 0; transition: opacity 0.45s; }
+.clinic__pics .pic:hover .pic__colour { opacity: 1; }
 
 .cta { min-height: 92svh; justify-items: center; align-content: center; text-align: center; gap: 0; }
 .cta__title { font-size: clamp(2.6rem, 7.6vw, 7.25rem); line-height: 0.92; letter-spacing: -0.055em; padding-bottom: clamp(3rem, 9vh, 6rem); }

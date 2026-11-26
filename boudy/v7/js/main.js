@@ -202,7 +202,6 @@
 
   /* ---------- The scene ---------- */
   var scene = null;
-  var lenis = null;
 
   function sceneSetup() {
     var canvas = $('[data-scene]');
@@ -256,10 +255,11 @@
     cam.position.z = 7;
 
     var W = 0, H = 0, halfW = 1, halfH = 1;
+    var quality = 1.5; // the most canvas pixels per screen pixel; lowered by itself on a device that cannot keep up
     function resize() {
       W = window.innerWidth; H = window.innerHeight;
       small = W < 800;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality));
       renderer.setSize(W, H, false);
       cam.aspect = W / H; cam.updateProjectionMatrix();
       halfH = Math.tan(34 * Math.PI / 360) * 7; halfW = halfH * cam.aspect;
@@ -295,6 +295,8 @@
     }
 
     var gx = 0, gy = 0, gs = 0.6, rotY = 0.6, rotX = 0, rotZ = 0, alpha = 0, ringSpin = 0;
+    var shown = '', morphUntil = 0;   // the points are only moved while a shape is forming
+    var slow = 0, counted = 0;
     var mx = 0, my = 0, last = 0, running = false, visible = true;
     var turnFrom = -1, shift = 0;
 
@@ -321,14 +323,17 @@
         else { shift = 1.9 * Math.sin(p * Math.PI) * (1 - 0.12 * Math.sin(p * Math.PI * 6)); }
       }
 
-      for (var i = 0; i < N; i++) {
+      if (cur.shape !== shown) { shown = cur.shape; morphUntil = now + 6000; }
+      var forming = snap || now < morphUntil || turnFrom >= 0;
+      if (turnFrom >= 0) morphUntil = now + 2500;
+      for (var i = forming ? 0 : N; i < N; i++) {
         var k = snap ? 1 : 1 - Math.pow(1 - lag[i], f), a = i * 3;
         var c = i >= N - CR ? targetOf(i, cur.shape) : null;
         var tx = c ? c[0] : tgt[a], ty = c ? c[1] : tgt[a + 1], tz = c ? c[2] : tgt[a + 2];
         if (c && turnFrom >= 0) k = snap ? 1 : 1 - Math.pow(0.7, f);
         pos[a] += (tx - pos[a]) * k; pos[a + 1] += (ty - pos[a + 1]) * k; pos[a + 2] += (tz - pos[a + 2]) * k;
       }
-      geo.attributes.position.needsUpdate = true;
+      if (forming) geo.attributes.position.needsUpdate = true;
 
       var e = snap ? 1 : 1 - Math.pow(0.94, f);
       gx += (cur.x - gx) * e; gy += (cur.y - gy) * e; gs += (cur.scale - gs) * e; alpha += (cur.alpha - alpha) * e;
@@ -350,6 +355,13 @@
 
     function loop(now) {
       if (!running) return;
+      // a device that cannot keep up gets a lighter canvas, in two steps
+      var real = now - last;
+      if (real < 250) { counted++; if (real > 40) slow++; }
+      if (counted >= 90) {
+        if (slow > 45 && quality > 0.75) { quality = quality > 1 ? 1 : 0.75; resize(); }
+        counted = 0; slow = 0;
+      }
       step(now, false);
       window.requestAnimationFrame(loop);
     }
@@ -380,7 +392,11 @@
     d.addEventListener('visibilitychange', function () { visible = !d.hidden; if (visible) start(); else stop(); });
 
     if (reduce) still(); else start();
-    scene = { state: function () { return { shape: cur.shape, alpha: +alpha.toFixed(2), x: +gx.toFixed(2), points: N, running: running }; } };
+    scene = {
+      state: function () { return { shape: cur.shape, alpha: +alpha.toFixed(2), x: +gx.toFixed(2), points: N, running: running, quality: quality }; },
+      // how long one frame of the scene's own work takes, in milliseconds
+      bench: function (n) { var gl = renderer.getContext(), t0 = window.performance.now(); for (var q = 0; q < n; q++) step(window.performance.now(), false); gl.finish(); return +((window.performance.now() - t0) / n).toFixed(2); }
+    };
     window.__scene = scene;
   }
 
@@ -407,26 +423,10 @@
     all.forEach(function (det) { det.addEventListener('toggle', function () { if (det.open) all.forEach(function (o) { if (o !== det) o.open = false; }); }); });
   }
 
-  // Smooth wheel scrolling, when motion is welcome; links inside the page use it too.
-  function smooth() {
-    if (reduce || !window.Lenis) return;
-    try { lenis = new window.Lenis({ lerp: 0.1 }); } catch (e) { lenis = null; return; }
-    root.classList.add('has-lenis');
-    (function raf(now) { lenis.raf(now); window.requestAnimationFrame(raf); })(window.performance.now());
-    d.addEventListener('click', function (e) {
-      var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
-      var to = a ? d.getElementById(a.getAttribute('href').slice(1)) : null;
-      if (!to) return;
-      e.preventDefault();
-      lenis.scrollTo(to, { offset: a.getAttribute('href') === '#top' ? 0 : -40 });
-    });
-  }
-
   function start() {
     collectEnglish();
     applyLang(initialLang());
     smallThings();
-    smooth();
     entrances();
     if (window.__animFailsafe) window.clearTimeout(window.__animFailsafe);
     try { sceneSetup(); } catch (e) { root.classList.add('no-gl'); if (window.console) window.console.error(e); }
