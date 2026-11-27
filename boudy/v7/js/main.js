@@ -5,6 +5,7 @@
     and come to rest in one level line at the end (three.js, on a canvas behind the page)
   - "Turn your head": the amber crystals tumble along a canal, then settle
   - entrances as sections arrive
+  - a pointer of its own, for a mouse: a dot and a ring that trails it
   The page reads in full with this file, or the scene, missing.
 */
 (function () {
@@ -400,6 +401,37 @@
     window.__scene = scene;
   }
 
+  /* ---------- The pointer ---------- */
+  function cursorSetup() {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    var dot = d.createElement('div'), halo = d.createElement('div');
+    dot.className = 'cur cur--dot'; halo.className = 'cur cur--ring';
+    dot.setAttribute('aria-hidden', 'true'); halo.setAttribute('aria-hidden', 'true');
+    d.body.appendChild(halo); d.body.appendChild(dot);
+    var x = 0, y = 0, hx = 0, hy = 0, raf = 0, seen = false, on = false, last = 0;
+
+    function show(yes) { dot.classList.toggle('is-shown', yes); halo.classList.toggle('is-shown', yes); }
+    function frame(now) {
+      var k = reduce ? 1 : 1 - Math.pow(0.8, Math.min(4, (now - last) / 16.7)); last = now;
+      hx += (x - hx) * k; hy += (y - hy) * k;
+      halo.style.transform = 'translate3d(' + hx.toFixed(1) + 'px,' + hy.toFixed(1) + 'px,0)';
+      raf = Math.abs(x - hx) + Math.abs(y - hy) > 0.15 ? window.requestAnimationFrame(frame) : 0;
+    }
+    window.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      x = e.clientX; y = e.clientY;
+      dot.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+      if (!seen) { seen = true; hx = x; hy = y; root.classList.add('has-cursor'); show(true); }
+      var hit = !!(e.target.closest && e.target.closest('a, button, summary, .pic, .svcs li, .steps li, .langs__list li'));
+      if (hit !== on) { on = hit; dot.classList.toggle('is-on', on); halo.classList.toggle('is-on', on); }
+      if (!raf) { last = window.performance.now(); raf = window.requestAnimationFrame(frame); }
+    }, { passive: true });
+    d.addEventListener('pointerdown', function (e) { if (e.pointerType === 'mouse') halo.classList.add('is-down'); });
+    d.addEventListener('pointerup', function () { halo.classList.remove('is-down'); });
+    root.addEventListener('mouseleave', function () { if (seen) show(false); });
+    root.addEventListener('mouseenter', function () { if (seen) show(true); });
+  }
+
   /* ---------- Entrances, the bar, small things ---------- */
   function entrances() {
     var items = $$('[data-in]');
@@ -427,6 +459,7 @@
     collectEnglish();
     applyLang(initialLang());
     smallThings();
+    cursorSetup();
     entrances();
     if (window.__animFailsafe) window.clearTimeout(window.__animFailsafe);
     try { sceneSetup(); } catch (e) { root.classList.add('no-gl'); if (window.console) window.console.error(e); }
