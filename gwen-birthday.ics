@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//bekhazi.ca//Gwen Birthday//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:gwen-birthday-lunch-20261129@bekhazi.ca
+DTSTAMP:20261127T120000Z
+DTSTART:20261129T180000Z
+DTEND:20261129T200000Z
+SUMMARY:Gwen’s Birthday Lunch
+LOCATION:Mandarin Restaurant\, 2055 Tenth Line Road\, Orléans\, ON
+DESCRIPTION:Lunch with family & friends. Buffet until 3 PM.\nAdults $42 · 
+ Kids 5–12 $21 · Under 5 free\nTax\, discount and tip included.\nInterac
+  to richardbekhazi@gmail.com
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Gwen’s Birthday Lunch starts in 1 hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+END:VCALENDAR
