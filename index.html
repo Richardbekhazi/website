@@ -85,10 +85,10 @@ main{position:relative;overflow:hidden;min-height:100svh;padding:0 max(16px,env(
 
 h1{margin:0;width:100%;display:flex;flex-direction:column;font-family:var(--serif);font-style:italic;font-weight:400;font-variation-settings:"opsz" 144;
   font-size:clamp(4rem,19vw,5.6rem);line-height:.84;letter-spacing:-.035em;color:var(--ink);user-select:none;-webkit-user-select:none}
-h1 .line{display:block;overflow:hidden;padding:.14em .08em .3em;margin:-.14em 0 -.3em}
+h1 .line{display:block}
 h1 .line:first-child{align-self:flex-start;margin-left:2%}
 h1 .line:nth-child(2){align-self:flex-end;margin-right:-2%}
-h1 .line span{display:block;animation:lineUp .9s var(--out) both}
+h1 .line span{display:block;animation:inkIn 1s var(--out) both}
 h1 .line:first-child span{animation-delay:.45s}
 h1 .line:nth-child(2) span{animation-delay:.53s}
 .what{margin:22px 0 0;font-size:20px;font-weight:500;color:var(--clay);user-select:none;-webkit-user-select:none;animation:fadeIn .5s 1.04s both}
@@ -167,9 +167,9 @@ h1 .line:nth-child(2) span{animation-delay:.53s}
 }
 
 /* ---------- motion ---------- */
-@keyframes deal{from{opacity:0;transform:translateY(40px) rotate(-3deg) scale(1.04)}30%{opacity:1}to{opacity:1;transform:none}}
-@keyframes shadowIn{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:none}}
-@keyframes lineUp{from{transform:translateY(105%)}to{transform:none}}
+@keyframes deal{from{opacity:0;transform:translateY(28px) scale(.98)}40%{opacity:1}to{opacity:1;transform:none}}
+@keyframes shadowIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes inkIn{from{opacity:0;transform:translateY(.16em);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes rule{to{transform:scaleX(1)}}
@@ -196,7 +196,6 @@ h1 .line:nth-child(2) span{animation-delay:.53s}
   .bigbranch path,.bigbranch ellipse{stroke-width:1.05}
   .date{font-size:17px}
   .near-leaf{display:none}
-  @keyframes deal{from{opacity:0;transform:translateY(40px) scale(1.03)}30%{opacity:1}to{opacity:1;transform:none}}
 }
 </style>
 </head>
