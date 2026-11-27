@@ -6,6 +6,7 @@
   - "Turn your head": the amber crystals tumble along a canal, then settle
   - entrances as sections arrive
   - a pointer of its own, for a mouse: a dot and a ring that trails it
+  - the points near the pointer light up in orange, with a short wake
   The page reads in full with this file, or the scene, missing.
 */
 (function () {
@@ -233,15 +234,26 @@
       }
     }
 
+    var TR = 8, trail = new Float32Array(TR * 3); // the pointer and its wake: x, y in screen pixels from the middle, and a strength
     var geo = new T.BufferGeometry();
     geo.setAttribute('position', new T.BufferAttribute(pos, 3));
     geo.setAttribute('aColor', new T.BufferAttribute(col, 3));
     geo.setAttribute('aSize', new T.BufferAttribute(size, 1));
     var mat = new T.ShaderMaterial({
-      uniforms: { uScale: { value: 1 }, uAlpha: { value: 0 } },
-      vertexShader: 'attribute vec3 aColor; attribute float aSize; uniform float uScale; uniform float uAlpha; varying vec3 vColor; varying float vA;' +
-        'void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = clamp(aSize * uScale / -mv.z, 1.2, 11.0);' +
-        ' vColor = aColor; vA = uAlpha * clamp((mv.z + 10.5) / 4.5, 0.18, 1.0); }',
+      uniforms: { uScale: { value: 1 }, uAlpha: { value: 0 }, uHalf: { value: new T.Vector2(1, 1) }, uTrail: { value: trail } },
+      // Each point measures how far it is, on the screen, from the pointer and the short wake behind it;
+      // near them it turns orange, swells a little and leans away. The graphics card does all of it.
+      vertexShader: 'attribute vec3 aColor; attribute float aSize; uniform float uScale; uniform float uAlpha; uniform vec2 uHalf; uniform vec3 uTrail[8]; varying vec3 vColor; varying float vA;' +
+        'void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;' +
+        ' vec2 sp = gl_Position.xy / gl_Position.w * uHalf; float glow = 0.0;' +
+        ' for (int i = 0; i < 7; i++) { vec3 a = uTrail[i]; vec3 b = uTrail[i + 1]; vec2 pa = sp - a.xy; vec2 ba = b.xy - a.xy;' +
+        '  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.0001), 0.0, 1.0); float s = mix(a.z, b.z, h); float r = 125.0 * (0.4 + 0.6 * s);' +
+        '  glow = max(glow, s * (1.0 - smoothstep(r * 0.22, r, length(pa - ba * h)))); }' +
+        ' vec2 off = sp - uTrail[0].xy; float dl = length(off);' +
+        ' float lean = uTrail[0].z * smoothstep(0.0, 55.0, dl) * (1.0 - smoothstep(55.0, 160.0, dl));' +
+        ' gl_Position.xy += off / max(dl, 0.001) * lean * 9.0 / uHalf * gl_Position.w;' +
+        ' gl_PointSize = clamp(aSize * uScale / -mv.z, 1.2, 11.0) * (1.0 + 0.55 * glow);' +
+        ' vColor = mix(aColor, vec3(1.0, 0.4, 0.06), glow); vA = uAlpha * clamp((mv.z + 10.5) / 4.5, 0.18, 1.0) * (1.0 - 0.3 * glow); }',
       fragmentShader: 'precision mediump float; varying vec3 vColor; varying float vA;' +
         'void main(){ float q = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.12, q); gl_FragColor = vec4(vColor, a * vA * 0.6); }',
       transparent: true, depthTest: false, depthWrite: false, blending: T.AdditiveBlending
@@ -255,7 +267,7 @@
     var cam = new T.PerspectiveCamera(34, 1, 0.1, 50);
     cam.position.z = 7;
 
-    var W = 0, H = 0, halfW = 1, halfH = 1;
+    var W = 0, H = 0, halfW = 1, halfH = 1, box = { left: 0, top: 0, width: 1, height: 1 };
     var quality = 1.5; // the most canvas pixels per screen pixel; lowered by itself on a device that cannot keep up
     function resize() {
       W = window.innerWidth; H = window.innerHeight;
@@ -265,6 +277,8 @@
       cam.aspect = W / H; cam.updateProjectionMatrix();
       halfH = Math.tan(34 * Math.PI / 360) * 7; halfW = halfH * cam.aspect;
       mat.uniforms.uScale.value = (H * renderer.getPixelRatio()) / (2 * Math.tan(34 * Math.PI / 360));
+      box = canvas.getBoundingClientRect();
+      mat.uniforms.uHalf.value.set(box.width / 2, box.height / 2);
     }
 
     // What the scene should be showing: read from the section in the middle of the screen.
@@ -299,6 +313,7 @@
     var shown = '', morphUntil = 0;   // the points are only moved while a shape is forming
     var slow = 0, counted = 0;
     var mx = 0, my = 0, last = 0, running = false, visible = true;
+    var px = 0, py = 0, hot = false, heat = 0; // where the pointer is on the canvas, and how warm its light is
     var turnFrom = -1, shift = 0;
 
     function targetOf(i, shape) {
@@ -350,6 +365,14 @@
       group.position.set(gx, gy, 0);
       group.scale.setScalar(gs);
       group.rotation.set(rotX, rotY + (flat ? 0 : mx * 0.3), rotZ + (cur.shape === 'ring' ? ringSpin : 0));
+      // the pointer's light: each link of the wake follows the one before it, so it trails and then gathers
+      heat += ((hot && !snap ? 1 : 0) - heat) * (1 - Math.pow(0.9, f));
+      var kk = 1 - Math.pow(0.7, f);
+      trail[0] = px; trail[1] = py; trail[2] = heat;
+      for (var q = 3; q < TR * 3; q += 3) {
+        trail[q] += (trail[q - 3] - trail[q]) * kk; trail[q + 1] += (trail[q - 2] - trail[q + 1]) * kk;
+        trail[q + 2] = heat * (1 - q / (TR * 3));
+      }
       mat.uniforms.uAlpha.value = alpha;
       renderer.render(world, cam);
     }
@@ -389,12 +412,16 @@
     window.addEventListener('pointermove', function (e) {
       if (e.pointerType === 'touch') return;
       mx = (e.clientX / W) * 2 - 1; my = (e.clientY / H) * 2 - 1;
+      px = e.clientX - box.left - box.width / 2; py = box.height / 2 - (e.clientY - box.top);
+      if (!hot && heat < 0.02) for (var q = 0; q < TR * 3; q += 3) { trail[q] = px; trail[q + 1] = py; } // the wake starts where the pointer comes in
+      hot = true;
     }, { passive: true });
+    root.addEventListener('mouseleave', function () { hot = false; });
     d.addEventListener('visibilitychange', function () { visible = !d.hidden; if (visible) start(); else stop(); });
 
     if (reduce) still(); else start();
     scene = {
-      state: function () { return { shape: cur.shape, alpha: +alpha.toFixed(2), x: +gx.toFixed(2), points: N, running: running, quality: quality }; },
+      state: function () { return { shape: cur.shape, alpha: +alpha.toFixed(2), x: +gx.toFixed(2), points: N, running: running, quality: quality, heat: +heat.toFixed(2) }; },
       // how long one frame of the scene's own work takes, in milliseconds
       bench: function (n) { var gl = renderer.getContext(), t0 = window.performance.now(); for (var q = 0; q < n; q++) step(window.performance.now(), false); gl.finish(); return +((window.performance.now() - t0) / n).toFixed(2); }
     };
