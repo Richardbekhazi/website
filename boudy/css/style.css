@@ -86,6 +86,8 @@ main, .foot { position: relative; z-index: 1; }
 /* He stands in front of a ring of the same points; the canvas behind the page draws it and follows the picture. */
 .about__fig { margin: 0; justify-self: center; width: min(100%, 68svh); }
 .about__fig img { width: 100%; height: auto; }
+/* Pictures are not text: a browser's text cursor (caret browsing, F7) cannot be placed on them, and does not show beside them. */
+figure, picture, img, canvas, .pic { -webkit-user-select: none; user-select: none; caret-color: transparent; -webkit-user-drag: none; }
 .about__copy { display: grid; gap: 1.25rem; max-width: 40rem; }
 .about__copy > p:not(.st) { color: var(--muted); }
 .glance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1rem; }
