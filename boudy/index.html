@@ -1,177 +1,277 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#16181b">
-  <title>Abdallah Najem: seven versions of the website</title>
+  <title>Abdallah Najem | Physiotherapist in Ottawa &amp; Vestibular Therapy</title>
+  <meta name="description" content="Abdallah Najem, Senior Registered Physiotherapist and Vestibular Therapist at Arro Wellness in Ottawa. Sports, orthopaedic and vestibular therapy for dizziness and vertigo, serving Westboro, Carlington, Nepean and the Queensway corridor. Book online.">
+  <meta name="theme-color" content="#070b14">
+  <link rel="canonical" href="https://bekhazi.ca/boudy/"><!-- [SITE URL]: replace with the live domain -->
+  <link rel="alternate" hreflang="en" href="https://bekhazi.ca/boudy/?lang=en">
+  <link rel="alternate" hreflang="fr" href="https://bekhazi.ca/boudy/?lang=fr">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Abdallah Najem | Physiotherapist in Ottawa">
+  <meta property="og:description" content="Senior Registered Physiotherapist and Vestibular Therapist at Arro Wellness, Ottawa. Sports, orthopaedic, vestibular and shockwave therapy. Care in English, French, Arabic and Spanish.">
+  <meta property="og:url" content="https://bekhazi.ca/boudy/">
+  <meta property="og:locale" content="en_CA">
+  <meta property="og:locale:alternate" content="fr_CA">
+  <meta property="og:image" content="https://bekhazi.ca/boudy/assets/images/og-image.jpg"><!-- [SITE URL]: update the domain when live -->
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=5">
+
   <script>
+    // Motion gate: entrance states exist only when motion is allowed, and a
+    // failsafe shows everything if the script never arrives.
     (function () {
       var d = document.documentElement;
+      d.classList.add('js');
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       d.classList.add('anim');
-      window.addEventListener('DOMContentLoaded', function () { requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('is-in'); }); }); });
-      setTimeout(function () { d.classList.add('is-in'); }, 2500);
+      window.__animFailsafe = setTimeout(function () { d.classList.remove('anim'); }, 4000);
     })();
   </script>
-  <style>
-    :root { --ink: #16181b; --bone: #f3f0e8; --wall: #e7e3d9; --yellow: #ffd13b; --sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif; --ease: cubic-bezier(0.22, 1, 0.36, 1); --px: clamp(1rem, 3.4vw, 3rem); }
-    *, *::before, *::after { box-sizing: border-box; }
-    * { margin: 0; }
-    body { background: var(--wall); color: var(--ink); font: 400 1.0625rem/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
-    a { color: inherit; }
-    img { display: block; max-width: 100%; }
-    :focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 
-    .top { background: var(--ink); color: var(--bone); padding: clamp(2rem, 6vw, 4.5rem) var(--px) clamp(2rem, 5vw, 3.5rem); display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.5rem clamp(2rem, 5vw, 5rem); align-items: end; }
-    h1 { font: 800 clamp(2.75rem, 6.3vw, 6.75rem) / 0.9 var(--sans); font-stretch: 106%; letter-spacing: -0.045em; text-wrap: balance; }
-    .top p { font-size: clamp(1.0625rem, 1.5vw, 1.375rem); line-height: 1.4; max-width: 30em; }
-    .top strong { font-weight: 700; }
-
-    .wall { list-style: none; padding: clamp(1.5rem, 4vw, 3rem) var(--px) clamp(3rem, 7vw, 5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 2.4vw, 2rem); }
-    .card { display: grid; gap: 0.9rem; text-decoration: none; height: 100%; align-content: start; }
-    .card__shot { overflow: hidden; aspect-ratio: 16 / 10; background: var(--bone); }
-    .card__shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: scale 0.7s var(--ease); }
-    .card:hover .card__shot img, .card:focus-visible .card__shot img { scale: 1.045; }
-    .card__name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.1rem 0.7rem; }
-    .card__name b { font: 800 clamp(1.75rem, 2.9vw, 2.6rem) / 1 var(--sans); font-stretch: 106%; letter-spacing: -0.035em; }
-    .card__name span { font-weight: 600; font-size: 1.0625rem; }
-    .card__text { max-width: 34em; }
-    .card__foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 0.15rem; }
-    .card__open { display: inline-flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0 1.1rem; background: var(--ink); color: var(--bone); font-weight: 700; transition: background 0.2s, color 0.2s; }
-    .card__open svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.9; transition: translate 0.25s var(--ease); }
-    .card:hover .card__open, .card:focus-visible .card__open { background: var(--yellow); color: var(--ink); }
-    .card:hover .card__open svg { translate: 2px -2px; }
-    .card__inks { display: flex; }
-    .card__inks i { width: 1.5rem; height: 1.5rem; }
-
-    .star { background: #070b14; color: #eef3fa; padding: clamp(4rem, 10vw, 8.5rem) var(--px); }
-    .star__card { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(1.5rem, 4.5vw, 4.5rem); align-items: center; text-decoration: none; }
-    .star__shot { overflow: hidden; aspect-ratio: 16 / 10; background: #101829; }
-    .star__shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: scale 0.9s var(--ease); }
-    .star__card:hover .star__shot img, .star__card:focus-visible .star__shot img { scale: 1.035; }
-    .star__text { display: grid; gap: 1.1rem; }
-    .star__new { font-weight: 600; font-size: 1.0625rem; color: #ffb84d; }
-    .star__name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.2rem 1rem; }
-    .star__name b { font: 800 clamp(3rem, 6.4vw, 6.5rem) / 0.9 var(--sans); font-stretch: 106%; letter-spacing: -0.045em; }
-    .star__name span { font-weight: 600; font-size: clamp(1.125rem, 1.6vw, 1.5rem); }
-    .star__say { font-size: clamp(1.0625rem, 1.35vw, 1.25rem); line-height: 1.45; max-width: 32em; }
-    .star__open { background: #ffb84d; color: #070b14; min-height: 3.5rem; padding: 0 1.5rem; font-size: 1.0625rem; }
-    .star__card:hover .star__open, .star__card:focus-visible .star__open { background: #eef3fa; color: #070b14; }
-    .star__card:focus-visible { outline-color: #ffb84d; }
-    .star .card__foot { margin-top: 0.6rem; }
-
-    .end { background: var(--ink); color: var(--bone); padding: 1.5rem var(--px); font-size: 0.9375rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
-
-    .anim .top > *, .anim .wall > li { opacity: 0; translate: 0 1.5rem; }
-    .anim.is-in .top > *, .anim.is-in .wall > li { opacity: 1; translate: none; transition: opacity 0.7s var(--ease), translate 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 80ms); }
-
-    @media (max-width: 1100px) { .wall { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 900px) { .star__card { grid-template-columns: minmax(0, 1fr); } }
-    @media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } }
-    @media (max-width: 620px) { .wall { grid-template-columns: minmax(0, 1fr); } }
-  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Physiotherapy", "LocalBusiness"],
+    "name": "Abdallah Najem, Registered Physiotherapist at Arro Wellness",
+    "description": "Senior Registered Physiotherapist and Vestibular Therapist in Ottawa: sports, orthopaedic, vestibular and shockwave therapy, soft tissue mobilization and manual therapy.",
+    "url": "https://bekhazi.ca/boudy/",
+    "image": "https://bekhazi.ca/boudy/assets/images/og-image.jpg",
+    "telephone": "+1-613-627-8808",
+    "email": "info@arrowellness.ca",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "102-1600 Laperriere Ave",
+      "addressLocality": "Ottawa",
+      "addressRegion": "ON",
+      "postalCode": "K1Z 8P5",
+      "addressCountry": "CA"
+    },
+    "areaServed": ["Ottawa", "Westboro", "Carlington", "Nepean", "Queensway corridor"],
+    "availableLanguage": ["English", "French", "Arabic", "Spanish"],
+    "sameAs": [
+      "https://www.instagram.com/abdallah.physio.ottawa/",
+      "https://www.facebook.com/abdallah.physio.ottawa"
+    ],
+    "potentialAction": {
+      "@type": "ReserveAction",
+      "target": "https://oprc.janeapp.com/#/staff_member/29",
+      "name": "Book with Abdallah"
+    },
+    "employee": {
+      "@type": "Person",
+      "name": "Abdallah Najem",
+      "jobTitle": "Senior Registered Physiotherapist and Vestibular Therapist",
+      "honorificSuffix": "BScPT, MSc Sports Rehab, DPT",
+      "knowsLanguage": ["en", "fr", "ar", "es"],
+      "worksFor": { "@type": "Organization", "name": "Arro Wellness" }
+    }
+  }
+  </script>
 </head>
 <body>
-  <header class="top">
-    <h1 style="--d: 0">Seven versions, one to choose</h1>
-    <p style="--d: 1">Seven designs for the website of <strong>Abdallah Najem</strong>, physiotherapist in Ottawa. Open each one, try it on a phone too, and say which you like. Every version has a French switch in its top bar.</p>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+  <!-- One scene behind the whole page: points that draw the inner ear, then the spine. Decorative. -->
+  <canvas class="scene" data-scene aria-hidden="true"></canvas>
+
+  <header class="bar" data-bar>
+    <a class="bar__mark" href="#top" aria-label="Abdallah Najem, home" data-i18n-attr="aria-label:homeLabel">Abdallah Najem</a>
+    <nav class="bar__nav" aria-label="Main" data-i18n-attr="aria-label:navLabel">
+      <ul>
+        <li><a href="#about" data-i18n="navAbout">About</a></li>
+        <li><a href="#care" data-i18n="navCare">Care</a></li>
+        <li><a href="#dizziness" data-i18n="navDizzy">Dizziness</a></li>
+        <li><a href="#faq" data-i18n="navFaq">Questions</a></li>
+        <li><a href="#clinic" data-i18n="navClinic">Clinic</a></li>
+      </ul>
+    </nav>
+    <div class="bar__act">
+      <button class="bar__lang" type="button" data-lang-toggle aria-label="Passer au français" lang="fr"><span>FR</span></button>
+      <a class="btn btn--small" href="https://oprc.janeapp.com/#/staff_member/29" target="_blank" rel="noopener">
+        <span class="btn__long" data-i18n="book">Book with Abdallah</span><span class="btn__short" data-i18n="bookShort">Book</span>
+        <span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span>
+      </a>
+    </div>
   </header>
 
-  <main>
-    <ul class="wall">
-      <li style="--d: 2">
-        <a class="card" href="v1/">
-          <span class="card__shot"><img src="previews/v1.jpg" width="1440" height="900" alt="First screen of version 1"></span>
-          <span class="card__name"><b>Version 1</b><span>Waves</span></span>
-          <span class="card__text">White and blue, with waves under the first screen. His name and portrait open the page, and the services scroll sideways.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 1 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#ffffff"></i><i style="background:#9fc2ec"></i><i style="background:#1f5fbf"></i><i style="background:#0b1f3a"></i></span>
-          </span>
-        </a>
-      </li>
-      <li style="--d: 3">
-        <a class="card" href="v2/">
-          <span class="card__shot"><img src="previews/v2.jpg" width="1440" height="900" alt="First screen of version 2"></span>
-          <span class="card__name"><b>Version 2</b><span>Poster</span></span>
-          <span class="card__text">“Ask for Abdallah” as a giant headline on stone grey, with the portrait opening out of it.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 2 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#dfdedb"></i><i style="background:#ffffff"></i><i style="background:#2456d6"></i><i style="background:#26251e"></i></span>
-          </span>
-        </a>
-      </li>
-      <li style="--d: 4">
-        <a class="card" href="v3/">
-          <span class="card__shot"><img src="previews/v3.jpg" width="1440" height="900" alt="First screen of version 3"></span>
-          <span class="card__name"><b>Version 3</b><span>Blend</span></span>
-          <span class="card__text">The warm opening and brand blue of version 1, redrawn, with the lower half of version 2.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 3 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#f4f6f9"></i><i style="background:#9bbbf0"></i><i style="background:#2456d6"></i><i style="background:#0c1b33"></i></span>
-          </span>
-        </a>
-      </li>
-      <li style="--d: 5">
-        <a class="card" href="v4/">
-          <span class="card__shot"><img src="previews/v4.jpg" width="1440" height="900" alt="First screen of version 4"></span>
-          <span class="card__name"><b>Version 4</b><span>Sideways</span></span>
-          <span class="card__text">The whole site moves from left to right, in cream, forest green and tangerine with a serif typeface. A button switches it to an ordinary vertical page.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 4 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#f4ecdd"></i><i style="background:#f7cf5c"></i><i style="background:#ff6a3d"></i><i style="background:#12302a"></i></span>
-          </span>
-        </a>
-      </li>
-      <li style="--d: 6">
-        <a class="card" href="v5/">
-          <span class="card__shot"><img src="previews/v5.jpg" width="1440" height="900" alt="First screen of version 5"></span>
-          <span class="card__name"><b>Version 5</b><span>Rings</span></span>
-          <span class="card__text">Deep violet with lilac and lime. Rings of type turn around the portrait, and the service cards stack as you scroll.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 5 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#f4f0fb"></i><i style="background:#d6ff45"></i><i style="background:#b9a5ff"></i><i style="background:#1d1136"></i></span>
-          </span>
-        </a>
-      </li>
-      <li style="--d: 7">
-        <a class="card" href="v6/">
-          <span class="card__shot"><img src="previews/v6.jpg" width="1440" height="900" alt="First screen of version 6"></span>
-          <span class="card__name"><b>Version 6</b><span>Still</span></span>
-          <span class="card__text">Nothing scrolls. Seven colour sheets share one screen: point at a colour and it slides open, point at a word and its details appear.</span>
-          <span class="card__foot">
-            <span class="card__open">Open version 6 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#f3f0e8"></i><i style="background:#ff86a8"></i><i style="background:#0f5c61"></i><i style="background:#ffd13b"></i><i style="background:#9fd3ff"></i><i style="background:#f4492f"></i><i style="background:#16181b"></i></span>
-          </span>
-        </a>
-      </li>
-    </ul>
+  <main id="main" tabindex="-1">
 
-    <!-- The newest version has the floor to itself -->
-    <section class="star" aria-labelledby="star-name">
-      <a class="star__card" href="v7/">
-        <span class="star__shot"><img src="previews/v7.jpg" width="1440" height="900" alt="First screen of version 7"></span>
-        <span class="star__text">
-          <span class="star__new">The newest</span>
-          <span class="star__name" id="star-name"><b>Version 7</b><span>Points</span></span>
-          <span class="star__say">One scene behind the whole page. Fifteen thousand points of light draw the inner ear in 3D, gather into a spine as you scroll, and come to rest in one level line. Press “Turn your head” and the amber crystals tumble, then settle.</span>
-          <span class="card__foot">
-            <span class="card__open star__open">Open version 7 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg></span>
-            <span class="card__inks" aria-hidden="true"><i style="background:#eef3fa"></i><i style="background:#cfe6ff"></i><i style="background:#ffb84d"></i><i style="background:#101829"></i></span>
-          </span>
-        </span>
-      </a>
+    <!-- 1. The first screen: the scene, and who this is -->
+    <section class="hero" id="top" data-shape="ear" data-x="0.46" data-y="0.06" data-scale="0.8" data-alpha="1" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <h1 class="hero__title" id="hero-title" data-in>Abdallah Najem</h1>
+        <p class="hero__role" data-in data-i18n="heroRole">Senior Registered Physiotherapist and Vestibular Therapist</p>
+        <p class="hero__lead" data-in data-i18n="heroLead">I help people in Ottawa recover from injury, ease neck and back pain, and feel steady again when dizziness gets in the way.</p>
+        <div class="hero__act" data-in>
+          <a class="btn" href="https://oprc.janeapp.com/#/staff_member/29" target="_blank" rel="noopener">
+            <span data-i18n="book">Book with Abdallah</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg>
+            <span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span>
+          </a>
+          <p class="call"><a href="tel:+16136278808"><span data-i18n="callLabel">Call</span> 613-627-8808</a><span data-i18n="askFor">Please ask for Abdallah when booking</span></p>
+        </div>
+      </div>
+      <p class="cap hero__cap" data-in data-i18n="capEar">The inner ear, drawn in points. Its three canals sense every turn of your head.</p>
+    </section>
+
+    <!-- 2. About: the person, in a real photograph -->
+    <section class="sec about" id="about" data-shape="ring" data-follow=".about__fig" data-x="-0.5" data-y="0.1" data-scale="1" data-alpha="1" aria-labelledby="about-title">
+      <figure class="about__fig" data-in>
+        <img src="assets/images/abdallah-cutout.webp" srcset="assets/images/abdallah-cutout-560.webp 560w, assets/images/abdallah-cutout.webp 1000w" sizes="(max-width: 800px) 80vw, 34vw" width="1000" height="1250" alt="Abdallah Najem in black scrubs, arms crossed, smiling" data-i18n-attr="alt:portraitAlt" loading="lazy">
+      </figure>
+      <div class="about__copy">
+        <h2 class="h" id="about-title" data-in data-i18n="aboutTitle">Assessment first, every time</h2>
+        <p class="st" data-in data-i18n="about1">I’m Abdallah Najem, a Senior Registered Physiotherapist and Vestibular Therapist at Arro Wellness in Ottawa.</p>
+        <p data-in data-i18n="about2">Over 12 years I have treated patients in Canada and Lebanon: athletes coming back from injury, desk workers whose neck tightens a little more each day, and people whose room spins when they turn their head.</p>
+        <p data-in data-i18n="about4">Every session starts with an assessment of how you move. Then we treat what is holding you back with hands-on care, and finish with exercises so the progress lasts.</p>
+        <dl class="glance" data-in>
+          <div><dt>12</dt><dd data-i18n="trustYears">years of clinical experience</dd></div>
+          <div><dt>2</dt><dd data-i18n="trustCountries">countries of practice: Canada and Lebanon</dd></div>
+          <div><dt>3</dt><dd><span data-i18n="trustCreds">credentials:</span> BScPT, MSc Sports Rehab, DPT</dd></div>
+          <div><dt>4</dt><dd><span data-i18n="trustLangs">languages:</span> English, Français, <span lang="ar">العربية</span>, Español</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- 3. Care: the points gather into a spine -->
+    <section class="sec care" id="care" data-shape="spine" data-x="-0.5" data-y="-0.04" data-scale="0.8" data-alpha="1" aria-labelledby="care-title">
+      <div class="stage"><p class="cap" data-in data-i18n="capSpine">Twenty-four vertebrae, drawn in points.</p></div>
+      <div class="care__copy">
+        <h2 class="h" id="care-title" data-in data-i18n="servicesTitle">What I treat</h2>
+        <p class="lead" data-in data-i18n="servicesLead">Five areas of care, one approach: understand the cause, then work toward moving and feeling better.</p>
+        <ul class="svcs">
+          <li data-in><h3 data-i18n="s1Title">Sports physiotherapy and rehab</h3><p data-i18n="s1Help">We look at how the injury affects the way you move, then build a progressive plan of treatment and exercise to help you return to activity with confidence.</p></li>
+          <li data-in><h3 data-i18n="s2Title">Orthopaedic physiotherapy</h3><p data-i18n="s2Problem">Neck, back or shoulder pain, muscle tension and stiffness that make work, sleep or everyday tasks harder.</p></li>
+          <li data-in><h3 data-i18n="s3Title">Vestibular therapy</h3><p data-i18n="s3Help">A vestibular assessment looks for what is driving the symptoms. Depending on the cause, specific head movements and balance exercises can help you feel steady again.</p></li>
+          <li data-in><h3 data-i18n="s4Title">Shockwave therapy</h3><p data-i18n="s4Help">Shockwave therapy is one of the treatments I offer. After your assessment, I will tell you whether it suits your situation and how it fits into your plan.</p></li>
+          <li data-in><h3 data-i18n="s5Title">Soft tissue mobilization and manual therapy</h3><p data-i18n="s5HelpShort">This is not a massage. I first assess how you move, then use targeted hands-on techniques on the tissues that restrict you, then add exercises so the results last.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. Dizziness: the ear again, with the crystals in amber -->
+    <section class="sec dizzy" id="dizziness" data-shape="crystals" data-x="0.46" data-y="0.02" data-scale="0.9" data-alpha="1" aria-labelledby="dizzy-title">
+      <div class="dizzy__copy">
+        <h2 class="h" id="dizzy-title" data-in data-i18n="spinTitle">When the room spins</h2>
+        <p class="st" data-in data-i18n="spinText">With BPPV, tiny crystals in the inner ear can drift out of place. Then a simple head turn sends a false signal, and the room seems to spin.</p>
+        <p data-in data-i18n="spinMore">Vestibular therapy starts with an assessment to find what is driving the dizziness, then works toward a room that stays still.</p>
+        <div class="dizzy__try" data-in>
+          <button class="btn btn--ghost" type="button" data-spin-btn><span data-i18n="spinBtn">Turn your head</span></button>
+          <p class="dizzy__status" role="status" data-spin-status></p>
+        </div>
+      </div>
+      <div class="stage"><p class="cap" data-in data-i18n="capCrystals">The amber points are the crystals. Press the button and watch them tumble, then settle.</p></div>
+    </section>
+
+    <!-- 5. Your visit -->
+    <section class="sec visit" id="visit" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.3" aria-labelledby="visit-title">
+      <div class="visit__head">
+        <h2 class="h" id="visit-title" data-in data-i18n="stepsTitle">What to expect</h2>
+        <p class="lead" data-in data-i18n="stepsLead">Every visit follows the same order, so you always know where you are and why.</p>
+      </div>
+      <ol class="steps">
+        <li data-in>
+          <h3 data-i18n="step1Title">Assess</h3>
+          <p data-i18n="step1Text">We talk about what you feel and what you want to get back to. Then I look at how you move, to find what is driving the problem, not only where it hurts.</p>
+        </li>
+        <li data-in>
+          <h3 data-i18n="step2Title">Treat</h3>
+          <p data-i18n="step2Text">Hands-on treatment targets what the assessment found: soft tissue mobilization, manual therapy and, when it suits, shockwave or vestibular techniques.</p>
+        </li>
+        <li data-in>
+          <h3 data-i18n="step3Title">Exercise</h3>
+          <p data-i18n="step3Text">You leave with a short set of exercises chosen for you, so the progress you make in the clinic keeps going at home.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Languages: the same request, four ways -->
+    <section class="sec langs" id="languages" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.3" aria-labelledby="langs-title">
+      <div class="langs__head">
+        <h2 class="h" id="langs-title" data-in data-i18n="langsTitle">Your care in your language</h2>
+        <p class="lead" data-in data-i18n="langsText">Pain and dizziness are hard enough to describe. You can do it in the language you are most comfortable with.</p>
+      </div>
+      <ul class="langs__list">
+        <li data-in><span class="langs__say">Ask for Abdallah</span><span class="langs__lv">English · <span data-i18n="lvFluent">Fluent</span></span></li>
+        <li data-in><span class="langs__say" lang="fr">Demandez Abdallah</span><span class="langs__lv"><span lang="fr">Français</span> · <span data-i18n="lvFluent">Fluent</span></span></li>
+        <li data-in><span class="langs__say" lang="ar" dir="rtl">اطلبوا عبدالله</span><span class="langs__lv"><span lang="ar">العربية</span> · <span data-i18n="lvNative">Native</span></span></li>
+        <li data-in><span class="langs__say" lang="es">Pregunte por Abdallah</span><span class="langs__lv"><span lang="es">Español</span> · <span data-i18n="lvBasic">Basic clinical</span></span></li>
+      </ul>
+    </section>
+
+    <!-- 6. Questions -->
+    <section class="sec faq" id="faq" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.3" aria-labelledby="faq-title">
+      <h2 class="h" id="faq-title" data-in data-i18n="faqTitle">Common questions</h2>
+      <div class="faq__list">
+        <details data-in open><summary data-i18n="q1">Is soft tissue mobilization the same as massage?</summary><p data-i18n="a1">No. Massage is mainly for relaxation. Soft tissue mobilization is part of a physiotherapy treatment: I first assess how you move, then use targeted hands-on techniques on the muscles and fascia that restrict you, then add exercises so the results last.</p></details>
+        <details data-in><summary data-i18n="q2">Why does my neck hurt after a day at my desk?</summary><p data-i18n="a2">Sitting all day plays a part, but it is not only about posture. Limited movement, stiffness in the upper back and reduced strength in the deep neck flexors can all contribute. An assessment shows which of these matter for you, and treatment and exercises can help you work toward a more comfortable neck.</p></details>
+        <details data-in><summary data-i18n="q3">What should I do if the room spins when I move my head?</summary><p data-i18n="a3">That spinning feeling is often linked to BPPV, an inner ear problem that vestibular therapy can help with. Book a vestibular assessment so the cause can be checked and treated. If dizziness comes on suddenly with new symptoms such as trouble speaking, weakness, numbness or a severe headache, call 911 right away.</p></details>
+        <details data-in><summary data-i18n="q6">How do I book with Abdallah?</summary><p data-i18n="a6">Book online at any time, or call Arro Wellness at 613-627-8808 and ask for Abdallah.</p></details>
+        <details data-in><summary data-i18n="q4">Do you offer direct billing?</summary><p><span class="ph" data-i18n="a4ph">[DIRECT BILLING DETAILS: which insurers, and how it works at Arro Wellness]</span> <span data-i18n="a4">Call the clinic at 613-627-8808 to confirm for your plan.</span></p></details>
+        <details data-in><summary data-i18n="q5">What are your fees?</summary><p><span class="ph" data-i18n="a5ph">[FEES: initial assessment and follow-up visits]</span> <span data-i18n="a5">Call the clinic for current rates.</span></p></details>
+      </div>
+      <!-- [REVIEWS]: no reviews are quoted on this page. When Abdallah supplies them, add them after the questions. -->
+    </section>
+
+    <!-- 7. The clinic -->
+    <section class="sec clinic" id="clinic" data-shape="field" data-x="0" data-y="0" data-scale="1.2" data-alpha="0.3" aria-labelledby="clinic-title">
+      <div class="clinic__copy">
+        <h2 class="h" id="clinic-title" data-in data-i18n="clinicTitle">Find the clinic</h2>
+        <p class="lead" data-in data-i18n="clinicSay">Arro Wellness is at 102-1600 Laperriere Ave in Ottawa, close to Westboro, Carlington, Nepean and the Queensway.</p>
+        <address class="clinic__card" data-in>
+          <p><strong>Arro Wellness</strong><br>102-1600 Laperriere Ave<br>Ottawa, ON K1Z 8P5</p>
+          <p><a href="tel:+16136278808">613-627-8808</a><br><a href="mailto:info@arrowellness.ca">info@arrowellness.ca</a></p>
+          <p><span data-i18n="factHours">Hours</span>: <span class="ph" data-i18n="hoursPh">[CLINIC HOURS]</span></p>
+        </address>
+        <p data-in><a class="btn btn--ghost" href="https://www.google.com/maps/search/?api=1&amp;query=1600+Laperriere+Ave+Ottawa+ON" target="_blank" rel="noopener"><span data-i18n="directions">Get directions</span><span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span></a></p>
+      </div>
+      <div class="clinic__pics">
+        <div class="pic" data-in><picture><source srcset="assets/images/clinic-treatment-room-wide-blue.webp" type="image/webp"><img src="assets/images/clinic-treatment-room-wide-blue.jpg" width="1100" height="687" alt="Wide view of a treatment room at Arro Wellness" data-i18n-attr="alt:tour1Alt" loading="lazy"></picture><img class="pic__colour" src="assets/images/clinic-treatment-room-wide.webp" width="1100" height="687" alt="" loading="lazy"></div>
+        <div class="pic" data-in><picture><source srcset="assets/images/clinic-rehab-equipment-blue.webp" type="image/webp"><img src="assets/images/clinic-rehab-equipment-blue.jpg" width="620" height="774" alt="Foam rollers, exercise balls, dumbbells and a knee model on the treatment room wall" data-i18n-attr="alt:tour2Alt" loading="lazy"></picture><img class="pic__colour" src="assets/images/clinic-rehab-equipment.webp" width="620" height="774" alt="" loading="lazy"></div>
+        <div class="pic" data-in><picture><source srcset="assets/images/clinic-room-square-blue.webp" type="image/webp"><img src="assets/images/clinic-room-square-blue.jpg" width="687" height="687" alt="A treatment room at Arro Wellness" data-i18n-attr="alt:spinCaption" loading="lazy"></picture><img class="pic__colour" src="assets/images/clinic-room-square.webp" width="687" height="687" alt="" loading="lazy"></div>
+      </div>
+    </section>
+
+    <!-- 8. Book: the points come to rest in one level line -->
+    <section class="sec cta" id="book" data-shape="line" data-x="0" data-y="-0.05" data-scale="1" data-alpha="1" aria-labelledby="cta-title">
+      <h2 class="cta__title" id="cta-title" data-in data-i18n="ctaTitle">Book online, or call</h2>
+      <div class="cta__act" data-in>
+        <a class="btn btn--big" href="https://oprc.janeapp.com/#/staff_member/29" target="_blank" rel="noopener">
+          <span data-i18n="book">Book with Abdallah</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" /></svg>
+          <span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span>
+        </a>
+        <a class="cta__tel" href="tel:+16136278808"><span data-i18n="callLabel">Call</span> 613-627-8808</a>
+      </div>
+      <p class="cta__note" data-in data-i18n="ctaNote">Either way, please ask for Abdallah.</p>
     </section>
   </main>
 
-  <footer class="end">
-    <p>These pages are previews and are hidden from search engines.</p>
-    <p>Hours, fees, direct billing and reviews are still placeholders in every version.</p>
+  <footer class="foot">
+    <p><strong>Abdallah Najem</strong>, BScPT, MSc Sports Rehab, DPT<br><span data-i18n="heroRole">Senior Registered Physiotherapist and Vestibular Therapist</span></p>
+    <p class="foot__links">
+      <a href="https://www.instagram.com/abdallah.physio.ottawa/" target="_blank" rel="noopener">Instagram<span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span></a>
+      <a href="https://www.facebook.com/abdallah.physio.ottawa" target="_blank" rel="noopener">Facebook<span class="visually-hidden" data-i18n="newTab">(opens in a new tab)</span></a>
+      <a href="mailto:info@arrowellness.ca">info@arrowellness.ca</a>
+    </p>
+    <p class="foot__small">© <span data-year>2026</span> Abdallah Najem. <span data-i18n="disclaimer">The information on this site is general and does not replace an assessment.</span></p>
   </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+  <script src="js/i18n.js?v=5" defer></script>
+  <script src="js/main.js?v=5" defer></script>
 </body>
 </html>
